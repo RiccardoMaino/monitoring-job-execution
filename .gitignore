@@ -1,0 +1,6 @@
+#Ignoring executable file
+bin
+#Ignoring object file
+build
+#Ignoring IDE dependent file
+.vscode
