@@ -52,6 +52,8 @@ int main(int argc, char *argv[]){
   pid = getpid();
   sprintf(str_pid, "%d", pid);
 
+  printf("Process PID: %s\n", str_pid);
+
   args[0] = "trace-cmd";
   args[1] = "record";
   args[2] = "-e";
@@ -71,7 +73,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
     }
   }
-
 
   switch(trace_cmd_record_pid = fork()){
     case -1:
@@ -109,7 +110,6 @@ int main(int argc, char *argv[]){
   save_parameter(output_parameter_filename, parameter_data, identifier);
   printf("Saved correctly on file: %s\n", output_parameter_filename);
   
-
   
   printf("Program terminated.\n");
   return 0;
