@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
+#include <sys/sem.h>
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
@@ -13,25 +18,23 @@
 #include <sys/wait.h>
 #include "utils.h"
 
+
 #define PROGRAM "test_app"
 #define PARAMETERS_PATH "/home/riccardo/Desktop/Stage/extract-data/parameters"
 #define RESULTS_PATH "/home/riccardo/Desktop/Stage/extract-data/results"
-#define MAX_JOBS 10
-#define MAX_INPUT_LINE_LENGTH 128
-#define MAX_COMMAND_LENGTH 150
-#define MAX_FILENAME_LENGTH 80
-#define MAX_IDENTIFIER_LENGTH 20
 #define DEFAULT_PARAMETER 5
+
 
 /* Prototypes */
 void default_execution();
-void custom_execution(int parameter_data);
-void save_parameter(char * output_parameter_filename, int parameter, char * identifier);
+void custom_execution(long parameter_data);
+void save_parameter(char * output_parameter_filename, long parameter, char * identifier);
 void usage();
 
 int main(int argc, char *argv[]){
-  int parameter_data;                                                     //Parameter data received by the user ì
+  long parameter_data;                                                    //Parameter data received by the user ì
   int pid, trace_cmd_record_pid, trace_cmd_record_status;                 //Integers used by the program  
+  //int sem_semaphore_id = -1;                                            //IPC semphore id
   char *str, *end_ptr;                                                    //Char pointers used by the program
   time_t current_time;                                                    //Struct used to get the current time. This will be used as an identifier.
   struct tm *tm;                                                          //Struct to store the actual time in a specific format.
@@ -43,6 +46,12 @@ int main(int argc, char *argv[]){
   char *args[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};  //Additional arguments for the trace-cmd process
   int max_size_int = ceil(log10(INT_MAX)) + 1;                            //Maximum number of digits that has the integer maximum number 
   char * str_pid = calloc(max_size_int, sizeof(*str_pid));                //String representation of the PID of this process
+  
+  // struct timespec tp;
+  // tp.tv_sec = 1;
+  // tp.tv_nsec = 0;
+  // sem_semaphore_id = semget(SEM_SEMAPHORE_KEY, NUM_SEM, 0600 | IPC_CREAT);
+  // semctl(sem_semaphore_id, START_EXECUTION_SEM, SETVAL, 0);
 
   current_time = time(NULL);
   tm = localtime(&current_time);
@@ -51,8 +60,7 @@ int main(int argc, char *argv[]){
   sprintf(output_parameter_filename, "%s/%s.txt", PARAMETERS_PATH, identifier);
   pid = getpid();
   sprintf(str_pid, "%d", pid);
-
-  printf("Process PID: %s\n", str_pid);
+  printf("Test App: process PID is %s\n", str_pid);
 
   args[0] = "trace-cmd";
   args[1] = "record";
@@ -62,6 +70,9 @@ int main(int argc, char *argv[]){
   args[5] = str_pid;
   args[6] = "-o";
   args[7] = "trace.dat";
+
+  // args[0] = "./tracing_process";
+  // args[1] = str_pid;
 
   if(argc < 2){
     usage();
@@ -87,8 +98,10 @@ int main(int argc, char *argv[]){
     default:
       printf("Press enter to continue and start tracing ...\n");
       fgets(line, MAX_INPUT_LINE_LENGTH ,stdin);
+      // sem_wait(sem_semaphore_id, START_EXECUTION_SEM, -1, STD_FLAG_SEM);
       if(strcmp(line, "\n") == 0){
-        custom_execution(parameter_data);
+        do_work(&parameter_data);
+        // custom_execution(parameter_data);
         kill(trace_cmd_record_pid, SIGINT);
       }else{
         fprintf(stderr, "Invalid operation. Aborting ...\n");
@@ -110,7 +123,7 @@ int main(int argc, char *argv[]){
   save_parameter(output_parameter_filename, parameter_data, identifier);
   printf("Saved correctly on file: %s\n", output_parameter_filename);
   
-  
+  // if(sem_semaphore_id != -1) semctl(sem_semaphore_id, 0, IPC_RMID);
   printf("Program terminated.\n");
   return 0;
 }
@@ -137,7 +150,7 @@ void default_execution(){
  * @brief It's the task executed with value of parameter data obtained by the user input
  * These will be passed to function that performs some work.
  */
-void custom_execution(int parameter_data){
+void custom_execution(long parameter_data){
   struct timespec tp;
   tp.tv_sec = 1;
   tp.tv_nsec = 0;
@@ -152,17 +165,17 @@ void custom_execution(int parameter_data){
 
 /**
  * @brief It saves the parameter used for the inner loop on a file. This file will be
- * manipulted by the Python program, to perform some data analysis on time execution based on
- * the user input
+ * manipulted by a Python program, to perform some data analysis on time execution, context switch number
+ * and migrations number based on the user input
 */
-void save_parameter(char * output_parameter_filename, int parameter, char * identifier){
+void save_parameter(char * output_parameter_filename, long parameter, char * identifier){
   FILE *fptr;
   fptr = fopen(output_parameter_filename, "w");
   if(fptr == NULL){
     fprintf(stderr, "Error creating parameter file. Aborting ...\n");
     exit(EXIT_FAILURE);
   }
-  fprintf(fptr, "%d, %s\n", parameter, identifier);
+  fprintf(fptr, "%ld, %s\n", parameter, identifier);
   fclose(fptr);
 }
 
