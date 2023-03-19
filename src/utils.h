@@ -7,56 +7,53 @@
 #define MAX_FILENAME_LENGTH 80
 #define MAX_IDENTIFIER_LENGTH 20
 
+#define BUFFER_SIZE 4096
+
+#define TRACING_ON_PATH "/sys/kernel/tracing/tracing_on"
 #define TRACE_MARKER_PATH "/sys/kernel/tracing/trace_marker"
 #define TRACE_PIPE_PATH "/sys/kernel/tracing/trace_pipe"
 #define FILTER_PATH "/sys/kernel/tracing/events/sched/sched_switch/filter"
 #define ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_switch/enable"
 
-#define STD_FLAG_SEM 0
-#define SEM_SEMAPHORE_KEY 5000
-#define NUM_SEM 1
-#define START_EXECUTION_SEM 0 	
-
-/**
- * Macro used to print errors with more information
-*/
 #define PRINT_ERROR fprintf(stderr,                     \
                             "%s:%d: Error %d \"%s\"\n", \
                             __FILE__, __LINE__, errno, strerror(errno));
 
 /**
- * @brief It allows to set the signal handler for a specific signal. Returns the structure representing the old handler
- * @param signum is the signal number representing the signal
- * @param handle_signal is the pointer to the function that handles the signal specified by signum
- * @param sa_mask is the signal mask to use in the handler function
- * @param sa_flags are some special flags that can be set
+ * @brief It allows to manipulate file system file
+ * @param file_path is the path to the file system path
+ * @param str is the string to be written on the file
 */
-struct sigaction set_signal_handler(int signum, void (*handle_signal)(int), sigset_t sa_mask, int sa_flags);
+void sys_write(char * file_path, char * str);
 
 /**
- * @brief It obtains sem_op resources if possible using the semaphore specified by sem_id with index sem_num
- * @param sem_id is the id number of the semaphore
- * @param sem_num is the index corresponding to the semaphore in the array of semaphore
- * @param sem_op is a negative integer representing the number of resources we want to obtain. For "Zero Waiting" set it to 0
- * @param sem_flag is a integer representing some flags to assign
- * @return if successful it returns 1, otherwise it returns 0 and sets errno
+ * @brief It allows to save the the in_file_path in an another path
+ * @param in_file_path is the path of the file we want to save somewhere else
+ * @param out_file_path is the path of the file where we will create a duplicate of the input file
 */
-int sem_wait(int sem_id, unsigned short sem_num, short sem_op, short sem_flag); 
+void save_trace(const char * in_file_path, const char * out_file_path);
+
 
 /**
- * @brief Release sem_op resources using semaphore sem_id with index sem_num
- * @param sem_id is the id number of the semaphore
- * @param sem_num is the index corresponding to the semaphore in the array of semaphore
- * @param sem_op is a negative integer representing the number of resources we want to obtain
- * @param sem_flag is a integer representing some flags to assign
- * @return if successful it returns 1, otherwise it returns 0 and sets errno
+ * @brief It saves the parameter used for the inner loop on a file. This file will be
+ * manipulted by a Python program, to perform some data analysis on time execution, context switch number
+ * and migrations number based on the user input
+ * @param output_parameter_filename is the file path where to save the parameter
+ * @param parameter is the parameter value
+ * @param identifier is the id associated with this execution
 */
-int sem_signal(int sem_id, unsigned short sem_num, short sem_op, short sem_flag);
+void save_parameter(char * output_parameter_filename, long parameter, char * identifier);
 
 /**
  * @brief It performs some kind of job for some time.
  * @param data is some data passed to the function. It use it to perform some actions inside the function.
  */
 void do_work(void *data);
+
+/**
+ * @brief It performs some variables swap for num_jobs time.
+ * @param data is some data passed to the function. It use it to perform some actions inside the function.
+ */
+void do_work_exchange(void * data);
 
 #endif
