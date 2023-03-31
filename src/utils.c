@@ -150,7 +150,7 @@ void do_work_ordering(void * data){
     list_add(list, &n3);
     list_add(list, &n4);
     list_add(list, &n5);
-    list->head = (list->head, compare_integer);
+    list->head = mergesort(list->head, compare_integer);
     list_destroy(list);
   }
 }
