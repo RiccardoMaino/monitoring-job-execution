@@ -42,7 +42,7 @@ void save_trace(const char * in_file_path, const char * out_file_path);
  * @param parameter is the parameter value
  * @param identifier is the id associated with this execution
 */
-void save_parameter(char * output_parameter_filename, long parameter, char * identifier);
+void save_parameter(char * output_parameter_filename, long parameter, char * identifier, char * mode);
 
 /**
  * @brief It performs some kind of job for some time.
@@ -54,6 +54,12 @@ void do_work(void *data);
  * @brief It performs some variables swap for num_jobs time.
  * @param data is some data passed to the function. It use it to perform some actions inside the function.
  */
-void do_work_exchange(void * data);
+void do_work_exchanging(void * data);
+
+/**
+ * @brief It performs a creation of a list and then orders it for num_jobs time.
+ * @param data is some data passed to the function. It use it to perform some actions inside the function.
+ */
+void do_work_ordering(void * data);
 
 #endif
