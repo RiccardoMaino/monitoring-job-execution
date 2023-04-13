@@ -1,6 +1,8 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <linux/types.h>
+
 #define MAX_IDENTIFIER_SIZE 20
 #define BUFFER_SIZE 4096
 
@@ -32,6 +34,13 @@
 #define DEFAULT_INFO 0
 #define USER_INFO 1
 
+#define SCHED_OTHER 0			/* non-real-time scheduling policy */
+#define SCHED_FIFO 1			/* real-time scheduling policy */
+#define SCHED_RR 2				/* real-time scheduling policy */
+#define SCHED_BATCH 3			/* non-real-time scheduling policy */
+#define SCHED_IDLE 5			/* non-real-time scheduling policy */
+#define SCHED_DEADLINE 6	/* deadline scheduling policy */
+
 /**
  * @brief It permits to enable the tracing infrastrucure in order to
  * effectively use the others functions in the library
@@ -59,14 +68,33 @@
 /**
  * @brief It is a structure that contains information that characterizes the execution. This
  * is a default structure that can be used by the user, or the user can define their own structure
- * to store execution data.
+ * to store different execution data.
 */
 typedef struct exec_info{
   char* id;
   int job_number;
   long parameter;
   char* mode;
+	char* sched_policy;
+	int sched_priority;
 } exec_info;
+
+/**
+ * @brief It is the redefinition of a structure of the linux kernel that serves to indicate the scheduler
+ * attributes and scheduling policy related to a process. This structure is utilized to set the scheduling policy and attributes 
+ * for a thread
+*/
+ struct sched_attr {
+	__u32 size;							/* Size of this structure */
+	__u32 sched_policy;			/* Policy (SCHED_*) */
+	__u64 sched_flags;			/* Flags */
+	__s32 sched_nice; 			/* Nice value (SCHED_OTHER, SCHED_BATCH) */
+	__u32 sched_priority;		/* Static priority (SCHED_FIFO, SCHED_RR) */
+	/* Remaining fields are for SCHED_DEADLINE (in nsec)*/
+	__u64 sched_runtime;
+	__u64 sched_deadline;
+	__u64 sched_period;
+};
 
 /**
  * @brief It structures the information contained within the "exec_info" struct into a string.
@@ -115,6 +143,26 @@ void set_event_filter_custom(const char* subsystem, const char* event, const cha
  * E_SCHED_MIGRATE_TASK.
 */
 void set_event_filter(pid_t pid, short event_flag);
+
+/**
+ * @brief It allows to specify a priority and a policy of the scheduler for the specified process. If the
+ * policy is set to be SCHED_FIFO or SCHED_RR, then priority must be 0
+ * @param pid is the pid of the process whose scheduling policy we want to change
+ * @param policy is an integer value that specifies the scheduling policy, as one of the 
+ * following SCHED_* values: SCHED_OTHER, SCHED_FIFO, SCHED_RR, SCHED_BATCH and SCHED_IDLE.
+ * @param priority it specifies the static priority to be set when specifying sched_policy as SCHED_FIFO
+ * or SCHED_RR. The allowed range of priorities for these policies is between 1 (low priority) and 99 
+ * (high priority). For other policies, this field must be specified as 0.
+ * @param e_info is a pointer to an "exec_info" struct. It is used to update the "sched_policy" and "sched_priority" fields
+ * according to the specified parameters. If it set to NULL, the function will ignore this parameter.
+*/
+void set_scheduler_policy(pid_t pid, __u32 policy, __u32 priority, exec_info* e_info);
+
+/**
+ * @brief It allows to retrieve the policy and attributes of the scheduler for the specified process.
+ * @param pid is the pid of the process whose scheduling policy and scheduling attributes we want to retrieve
+*/
+struct sched_attr* get_scheduler_attr(pid_t pid);
 
 /**
  * @brief It allows you to enable or disable the recording of an event specified by the subsystem and event parameters.

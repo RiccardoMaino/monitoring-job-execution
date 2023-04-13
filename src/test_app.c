@@ -13,28 +13,31 @@
 #include "list.h"
 
 #define RESULTS_DIR "/home/riccardo/Desktop/Stage/demo/results"
-// #define PARAMETERS_PATH "/home/riccardo/Desktop/Stage/extract-data/parameters"
-// #define RESULTS_PATH "/home/riccardo/Desktop/Stage/extract-data/results"
 #define DEFAULT_PARAMETER 1000
-#define MAX_JOBS 10
+#define MAX_JOBS 100
+#define MAX_VALUE 100000000
+#define MIN_VALUE 100
 
 //CON IFDEF FACCIO POSSIBILITA DI LEGGERE LA TRACE O LA TRACE_PIPE
 
 void usage();
-long update_parameter(long parameter_data, int i);
+long update_parameter(long parameter);
+long update_parameter_2();
+long update_parameter_3(long parameter, long increase);
 void do_work(void* param);
 void do_work_exchanging(void* param);
 void do_work_ordering(void* param);
+void print_sched_attr(struct sched_attr* attr);
 
 int main(int argc, char *argv[]){
-  long parameter_data;                                                    //Parameter data received by the user ì
-  int mode;                                                               //Launch mode of the program
-  int pid;                                                                //Integers used by the program
-  void (*do_work_ptr)(void *);                                            //A pointer to the function to execute based on the mode selected
-  char *str, *end_ptr;                                                    //Char pointers used by the program
-  struct timespec tp;                                                     //It's a structure that define the number of sec and nsec to wait using the nanosleep
-  exec_info execution_info;
-    
+  long parameter_data;                  //It is the parameter value received by the user input 
+  int mode;                             //It specify the job mode of the program
+  int pid;                              //It is the PID of the process
+  void (*do_work_ptr)(void *);          //It is a pointer to the job to execute based on the mode selected
+  char *str, *end_ptr;                  //They are char pointers used by the program
+  struct timespec tp;                   //It is a structure needed by the nanosleep to specify the number of sec and nsec to wait
+  exec_info execution_info;             //It is a structure that contains execution information
+  
   tp.tv_sec = 1;
   tp.tv_nsec = 0;
   pid = getpid();
@@ -67,34 +70,36 @@ int main(int argc, char *argv[]){
     do_work_ptr = do_work;
     execution_info.mode = "EmptyLoop";
   }
-  
+
+
   printf("Executing ...\n");
+  //Setting the scheduling policy and priority
+  set_scheduler_policy(0, SCHED_OTHER, 0, &execution_info);
   //Enabling the tracing infrastructure
   ENABLE_TRACING;
   //Setting up the filter of the sched_switch event
   set_event_filter(pid, E_SCHED_SWITCH);
   //Setting the identifier value
   execution_info.id = generate_execution_identifier();
-
-  printf("DEBUG: %s\n", execution_info.id);
   //Enabling the tracing of the sched_switch event
   event_record(E_SCHED_SWITCH, ENABLE);
   for(int i = 0; i<MAX_JOBS; i++){
     //Updates the parameter
-    execution_info.parameter = update_parameter(parameter_data, i);
-    execution_info.job_number = i;
+    execution_info.parameter = parameter_data;
+    execution_info.job_number = i+1;
     //Trace mark that the i-th job started
-    trace_mark_job(i, START);
+    trace_mark_job(i+1, START);
     //Execute Job
     do_work_ptr(&parameter_data);
     //Trace mark that the i-th job ended
-    trace_mark_job(i, STOP);
+    trace_mark_job(i+1, STOP);
     //Log the execution informations
     log_execution_info(RESULTS_DIR, execution_info.id, &execution_info, NULL, DEFAULT_INFO);
     //Wait some time before starting the next job
     if(nanosleep(&tp, NULL) != 0){
       fprintf(stderr, "Nanosleep has been interrupted ...\n");
     }
+    parameter_data = update_parameter_3(parameter_data, 1000000);
   }
   //Disabling the tracing of the sched_switch event
   event_record(E_SCHED_SWITCH, DISABLE);
@@ -104,9 +109,19 @@ int main(int argc, char *argv[]){
   DISABLE_TRACING;
 
   free(execution_info.id);
-  printf("DONE.\n");
-  printf("All has been correctly saved. Terminating.\n");
+  printf("DONE. All has been correctly saved. Terminating.\n");
+
   return 0;
+}
+
+/**
+ * @brief It allows to print the sched_attr structure passed as parameter
+ * @param attr is a pointer to the sched_attr structure that we want to print out
+*/
+void print_sched_attr(struct sched_attr* attr){
+  printf("The process scheduling attributes are the following:\n");
+  printf("{\n\tSize = %u\n\tPolicy = %u\n\tFlags = %llu\n\tNice = %d\n\tPriority = %u\n\n\t**** Fields for SCHED_DEADLINE ****\n\tRuntime = %llu\n\tDeadline = %llu\n\tPeriod = %llu\n}\n", 
+          attr->size, attr->sched_policy, attr->sched_flags, attr->sched_nice, attr->sched_priority, attr->sched_runtime, attr->sched_deadline, attr->sched_period);
 }
 
 /**
@@ -123,9 +138,28 @@ void usage(){
  * @param parameter is the original value
  * @param i is an integer value used to choose the next value calculated by the math function
 */
-long update_parameter(long parameter, int i){
-  return (i%2 == 0) ? parameter/2 : 3*parameter + 1;
+long update_parameter(long parameter){
+  return (parameter%2 == 0) ? parameter/2 : 3*parameter + 1;
 }
+
+/**
+ * @brief It updates the parameter based on the math function provided
+*/
+long update_parameter_2(){
+  long num;
+  
+  srand(time(NULL));
+  num = (rand() % (MAX_VALUE - MIN_VALUE + 1)) + MIN_VALUE;
+  return num;
+}
+
+/**
+ * @brief It updates the parameter based on the math function provided
+*/
+long update_parameter_3(long parameter, long increase){
+  return parameter + increase;
+}
+
 
 /**
  * @brief It performs a basic empty loop.
@@ -173,6 +207,7 @@ int compare_integer(void* a, void* b){
 void do_work_ordering(void* param){
   int n1 = 10, n2 = 30, n3 = 20, n4 = 50, n5 = 40;
   int num = *(int *)param;
+
   for(int i = 0; i<num; i++){
     List * list = list_create();
     list_add(list, &n1);

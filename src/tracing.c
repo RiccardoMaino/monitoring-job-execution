@@ -11,11 +11,24 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sched.h>
-
-
 #include "tracing.h"
 
 #define USE_TRACE_PIPE
+
+#ifdef __x86_64__
+#define __NR_sched_setattr		314
+#define __NR_sched_getattr		315
+#endif
+
+#ifdef __i386__
+#define __NR_sched_setattr		351
+#define __NR_sched_getattr		352
+#endif
+
+#ifdef __arm__
+#define __NR_sched_setattr		380
+#define __NR_sched_getattr		381
+#endif
 
 /**
  * @brief It allows to generate an identifier for an execution of a job. The identifier
@@ -142,6 +155,117 @@ void set_event_filter(pid_t pid, short event_flag){
 }
 
 /**
+ * @brief It is the redefinition of the sched_setattr() system call present in the linux kernel. It invokes that system 
+ * call using its index into the kernel system call table. The sched_setattr() system call sets the scheduling policy and
+ * associated attributes for the thread whose ID is specified in pid. If pid equals zero, the scheduling policy and attributes 
+ * of the calling thread will be set.
+ * @param pid is the pid of the process. If it is set to 0 it means to set the scheduler attributes for the
+ * calling process
+ * @param attr is a pointer to a sched_attr structure which contains the scheduler attributes to be set
+ * @param flags are some flags that can be ORed togheter
+*/
+int sched_setattr(pid_t pid, const struct sched_attr *attr, unsigned int flags){
+	return syscall(__NR_sched_setattr, pid, attr, flags);
+}
+
+/**
+ * @brief It is the redefinition of the sched_getattr() system call present in the linux kernel. It invokes that system 
+ * call using its index into the kernel system call table. The sched_getattr() system call fetches the scheduling policy 
+ * and the associated attributes for the thread whose ID is specified in pid. If pid equals zero, the scheduling policy and 
+ * attributes of the calling thread will be retrieved.
+ * @param pid is the pid of the process. If it is set to 0 it means to retrieve the scheduler attributes for the
+ * calling process
+ * @param attr is a pointer to a sched_attr structure which will be filled with the current scheduler attributes of the
+ * process identified by the pid parameter
+ * @param size is the size of the sched_attr structure as known to user space.
+ * @param flags is provided to allow for future extensions to the interface; in the current implementation 
+ * it must be specified as 0.
+*/
+int sched_getattr(pid_t pid, struct sched_attr *attr, unsigned int size, unsigned int flags){
+  return syscall(__NR_sched_getattr, pid, attr, size, flags);
+}
+
+/**
+ * @brief It allows to specify a priority and a policy of the scheduler for the specified process. If the
+ * policy is set to be SCHED_FIFO or SCHED_RR, then priority must be 0
+ * @param pid is the pid of the process whose scheduling policy we want to change
+ * @param policy is an integer value that specifies the scheduling policy, as one of the 
+ * following SCHED_* values: SCHED_OTHER, SCHED_FIFO, SCHED_RR, SCHED_BATCH and SCHED_IDLE.
+ * @param priority it specifies the static priority to be set when specifying sched_policy as SCHED_FIFO
+ * or SCHED_RR. The allowed range of priorities for these policies is between 1 (low priority) and 99 
+ * (high priority). For other policies, this field must be specified as 0.
+ * @param e_info is a pointer to an "exec_info" struct. It is used to update the "sched_policy" and "sched_priority" fields
+ * according to the specified parameters. If it set to NULL, the function will ignore this parameter.
+*/
+void set_scheduler_policy(pid_t pid, __u32 policy, __u32 priority, exec_info* e_info){
+  struct sched_attr attr = {0};
+  int max_priority = sched_get_priority_max(policy);
+  int min_priority = sched_get_priority_min(policy);
+
+  if(priority < min_priority){
+    priority = min_priority;
+  }
+
+  if(priority > max_priority){
+    priority = max_priority;
+  }
+
+  if(e_info != NULL){
+    switch (policy){
+    case SCHED_FIFO:
+      e_info->sched_policy = "SCHED_FIFO";
+      break;
+    case SCHED_RR:
+      e_info->sched_policy = "SCHED_RR";
+      break;
+    case SCHED_BATCH:
+      e_info->sched_policy = "SCHED_BATCH";
+      break;
+    case SCHED_IDLE:
+      e_info->sched_policy = "SCHED_IDLE";
+      break;
+    case SCHED_DEADLINE:
+      e_info->sched_policy = "SCHED_DEADLINE";
+      break;
+    case SCHED_OTHER:
+      e_info->sched_policy = "SCHED_OTHER";
+      break;
+    default:
+      e_info->sched_policy = "UNDEFINED";
+      break;
+    }
+    e_info->sched_priority = priority; 
+  }
+
+  attr.size = sizeof(attr);
+  attr.sched_policy = policy;
+  attr.sched_priority = priority;
+  attr.sched_flags = 0;
+  if(sched_setattr(pid, &attr, 0) < 0){
+    fprintf(stderr, "set_scheduler_policy: error setting the scheduler attributes. Aborting ...\n");
+    PRINT_ERROR;
+    exit(EXIT_FAILURE);
+  }
+}
+
+/**
+ * @brief It allows to retrieve the policy and attributes of the scheduler for the specified process. The pointed
+ * structure must be freed after use.
+ * @param pid is the pid of the process whose scheduling policy and scheduling attributes we want to retrieve
+*/
+struct sched_attr* get_scheduler_attr(pid_t pid){
+  struct sched_attr* attr = (struct sched_attr*)malloc(sizeof(*attr));
+  bzero(attr, sizeof(*attr));
+
+  if(sched_getattr(pid, attr, sizeof(*attr), 0) < 0){
+    fprintf(stderr, "get_scheduler_policy: error retrieving the scheduler attributes. Aborting ...\n");
+    PRINT_ERROR;
+    exit(EXIT_FAILURE);
+  }
+  return attr;
+}
+
+/**
  * @brief It allows you to enable or disable the recording of an event specified by the subsystem and event parameters.
  * @param subsystem is a string that specify subsystem's name of the event.
  * @param event is a string that specify the event's name. Set it to NULL if you want to use a default filter
@@ -192,7 +316,7 @@ void event_record(short event_flag, short op){
       tracing_write(SCHED_MIGRATE_TASK_ENABLE_PATH, op_character);
       break;
     default:
-      fprintf(stderr, "event_record: event_flag specified doesn't exist in the library. Aborting ...\n");
+      fprintf(stderr, "event_record: invalid event_flag (event_flag not found). Aborting ...\n");
       exit(EXIT_FAILURE);
       break;
     }
@@ -206,7 +330,7 @@ void event_record(short event_flag, short op){
 /**
  * @brief It structures the information contained within the "exec_info" struct into a string.
  * @param info is a pointer to an "exec_info" struct.
- * @return a pointer to the formatted string.
+ * @return a pointer to the comma separeted string containing all the fields of the "exec_info" struct 
 */
 char* exec_info_to_str(void* info){
   char* str;
@@ -216,14 +340,14 @@ char* exec_info_to_str(void* info){
   exec_info* e_info = (exec_info*)info;
   
   
-  str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->mode) + 2;
+  str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->mode) + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2;
   str = (char*)calloc(str_len, sizeof(*str));
   if(str == NULL){
     fprintf(stderr, "exec_info_to_str: error allocating memory. Aborting ...\n");
     PRINT_ERROR;
     exit(EXIT_FAILURE);
   }
-  sprintf(str, "%s, %d, %ld, %s\n", e_info->id, e_info->job_number, e_info->parameter, e_info->mode);
+  sprintf(str, "%s, %d, %ld, %s, %s, %d\n", e_info->id, e_info->job_number, e_info->parameter, e_info->mode, e_info->sched_policy, e_info->sched_priority);
   return str;
 }
 
@@ -233,14 +357,15 @@ char* exec_info_to_str(void* info){
  * containing the execution details.
  * @param identifier is a user-defined string that identify the execution. It can be obtained by calling the "generate_execution_identifier" function.
  * @param info is a pointer to a user-defined struct that contains information about an execution. It can also be a default struct "exec_info". The default
- * structure "exec_info" has the following predefined fields related to the execution: "id", "job_number", "parameter" and "mode". To desire the use of the default struct,
- * allocate that structure and pass the pointer to that structure.
- * @param info_to_str is a user-defined function that allows converting the "info" structure into a formatted string as desired. It 
- * can also be a default function that converts the exec_info structure into a string. To desire this latter behavior, set this 
- * parameter to NULL.
+ * structure "exec_info" has the following predefined fields related to the execution: "id", "job_number", "parameter", "mode", "sched_policy" and "sched_priority".
+ * To desire the use of the default struct, allocate that structure and pass the pointer to that structure.
+ * @param info_to_str is a user-defined function that allows converting the "info" structure into a formatted string as desired. The returned string
+ * should be a string with comma separated information of the execution. IT can also be a default function that converts the exec_info structure into a 
+ * string. To desire this latter behavior, set this parameter to NULL.
  * @param flag a short value used to specify whether to use the library's internal struct and function related to the execution information or
- * whether to use user-defined struct and function passed as parameters. To obtain the first behavior, set the value of this parameter 
- * to DEFAULT_INFO and pass an "exec_info" struct in "info". To obtain the second behavior, set the value of this parameter to USER_INFO.
+ * whether to use user-defined struct and function passed as parameters. To obtain the first behavior, set the value of this parameter to DEFAULT_INFO 
+ * and pass an "exec_info" struct in "info". To obtain the second behavior, set the value of this parameter to USER_INFO and pass your defined
+ * structure and function in "info" and "info_to_str".
 */
 void log_execution_info(const char* dir_path, const char* identifier, void* info, char* (*info_to_str)(void*), short flag){
   int fd;
@@ -262,16 +387,10 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
 
   //Verify that the path provided by the user actually exists, if not create it
   if(access(dir_path, F_OK) == -1) {
-    if(mkdir(dir_path, 0666) == -1){
+    if(mkdir(dir_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
-    }else{
-      if (chown(dir_path, getuid(), getgid()) != 0) {
-        fprintf(stderr, "log_execution_info: chown failed. Aborting ...\n");
-        PRINT_ERROR;
-        exit(EXIT_FAILURE);
-      }
     }
   }
 
@@ -285,16 +404,10 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
   }
   sprintf(dir_file_path, "%s/%s", dir_path, identifier);
   if(access(dir_file_path, F_OK) == -1) {
-    if(mkdir(dir_file_path, 0666) == -1){
+    if(mkdir(dir_file_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_file_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
-    }else{
-      if (chown(dir_file_path, getuid(), getgid()) != 0) {
-        fprintf(stderr, "log_execution_info: chown failed. Aborting ...\n");
-        PRINT_ERROR;
-        exit(EXIT_FAILURE);
-      }
     }
   }
 
@@ -307,7 +420,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
   }
   sprintf(file_path, "%s/exec.txt", dir_file_path);
 
-  fd = open(file_path, O_WRONLY | O_CREAT, 0666);
+  fd = open(file_path, O_WRONLY | O_CREAT | O_APPEND, 0777);
   if(fd == -1){
     fprintf(stderr, "log_execution_info: error opening \"%s\" file. Aborting ...\n", file_path);
     PRINT_ERROR;
@@ -359,16 +472,10 @@ void log_trace(const char* dir_path, char* identifier){
 
   //Verify that the path provided by the user actually exists. If it doesn't exist, create it.
   if(access(dir_path, F_OK) == -1) {
-    if(mkdir(dir_path, 0666) == -1){
+    if(mkdir(dir_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
-    }else{
-      if (chown(dir_path, getuid(), getgid()) != 0) {
-        fprintf(stderr, "log_trace: chown failed. Aborting ...\n");
-        PRINT_ERROR;
-        exit(EXIT_FAILURE);
-      }
     }
   }
 
@@ -382,16 +489,10 @@ void log_trace(const char* dir_path, char* identifier){
   }
   sprintf(dir_file_path, "%s/%s", dir_path, identifier);
   if(access(dir_file_path, F_OK) == -1) {
-    if(mkdir(dir_file_path, 0666) == -1){
+    if(mkdir(dir_file_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_file_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
-    }else{
-      if (chown(dir_file_path, getuid(), getgid()) != 0) {
-        fprintf(stderr, "log_trace: chown failed. Aborting ...\n");
-        PRINT_ERROR;
-        exit(EXIT_FAILURE);
-      }
     }
   }
 
@@ -404,7 +505,7 @@ void log_trace(const char* dir_path, char* identifier){
   }
   sprintf(file_path, "%s/trace.txt", dir_file_path);
 
-  fd_write = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  fd_write = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0777);
   if(fd_write == -1){
     fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", file_path);
     PRINT_ERROR;
