@@ -1,4 +1,4 @@
-CFLAGS= -std=c11 -pedantic -O0 -g
+CFLAGS= -std=c11 -pedantic
 COMMON_DEPS = src/*.h  Makefile
 
 app: bin/test_app

@@ -12,13 +12,11 @@
 #include "tracing.h"
 #include "list.h"
 
-#define RESULTS_DIR "/home/riccardo/Desktop/Stage/demo/results"
+#define RESULTS_DIR "../results"
 #define DEFAULT_PARAMETER 1000
-#define MAX_JOBS 100
+#define MAX_JOBS 10
 #define MAX_VALUE 100000000
 #define MIN_VALUE 100
-
-//CON IFDEF FACCIO POSSIBILITA DI LEGGERE LA TRACE O LA TRACE_PIPE
 
 void usage();
 long update_parameter(long parameter);
@@ -27,16 +25,15 @@ long update_parameter_3(long parameter, long increase);
 void do_work(void* param);
 void do_work_exchanging(void* param);
 void do_work_ordering(void* param);
-void print_sched_attr(struct sched_attr* attr);
 
 int main(int argc, char *argv[]){
-  long parameter_data;                  //It is the parameter value received by the user input 
-  int mode;                             //It specify the job mode of the program
-  int pid;                              //It is the PID of the process
-  void (*do_work_ptr)(void *);          //It is a pointer to the job to execute based on the mode selected
-  char *str, *end_ptr;                  //They are char pointers used by the program
-  struct timespec tp;                   //It is a structure needed by the nanosleep to specify the number of sec and nsec to wait
-  exec_info execution_info;             //It is a structure that contains execution information
+  long parameter_data;                  ///>It is the parameter value received by the user input 
+  int mode;                             ///>It specify the job mode of the program
+  int pid;                              ///>It is the PID of the process
+  void (*do_work_ptr)(void *);          ///>It is a pointer to the job to execute based on the mode selected
+  char *str, *end_ptr;                  ///>They are char pointers used by the program
+  struct timespec tp;                   ///>It is a structure needed by the nanosleep to specify the number of sec and nsec to wait
+  exec_info* execution_info;            ///>It is a pointer to a structure that contains execution information
   
   tp.tv_sec = 1;
   tp.tv_nsec = 0;
@@ -45,8 +42,7 @@ int main(int argc, char *argv[]){
 
   if(argc < 2){
     usage();
-    mode = 1;
-    parameter_data = DEFAULT_PARAMETER;
+    exit(EXIT_FAILURE);
   }else{
     mode = strtol(argv[1], &end_ptr, 10);
     if(errno != 0 || end_ptr == argv[1] || *end_ptr != '\0'){
@@ -60,33 +56,33 @@ int main(int argc, char *argv[]){
     }
   }
 
+  execution_info = create_exec_info(0, parameter_data, NULL);
+
   if(mode == 3){
     do_work_ptr = do_work_ordering;
-    execution_info.mode = "ListOrdering";
+    execution_info->details = "ListOrdering";
   }else if(mode == 2){
     do_work_ptr = do_work_exchanging;
-    execution_info.mode = "VariableExchanging";
+    execution_info->details = "VariableExchanging";
   }else{
     do_work_ptr = do_work;
-    execution_info.mode = "EmptyLoop";
+    execution_info->details = "EmptyLoop";
   }
 
 
   printf("Executing ...\n");
   //Setting the scheduling policy and priority
-  set_scheduler_policy(0, SCHED_OTHER, 0, &execution_info);
+  set_scheduler_policy(0, SCHED_OTHER, 0, execution_info);
   //Enabling the tracing infrastructure
   ENABLE_TRACING;
   //Setting up the filter of the sched_switch event
-  set_event_filter(pid, E_SCHED_SWITCH);
-  //Setting the identifier value
-  execution_info.id = generate_execution_identifier();
+  set_event_filter(pid, E_SCHED_MIGRATE_TASK, SET);
   //Enabling the tracing of the sched_switch event
-  event_record(E_SCHED_SWITCH, ENABLE);
+  event_record(E_SCHED_MIGRATE_TASK, ENABLE);
   for(int i = 0; i<MAX_JOBS; i++){
     //Updates the parameter
-    execution_info.parameter = parameter_data;
-    execution_info.job_number = i+1;
+    execution_info->parameter = parameter_data;
+    execution_info->job_number = i+1;
     //Trace mark that the i-th job started
     trace_mark_job(i+1, START);
     //Execute Job
@@ -94,21 +90,21 @@ int main(int argc, char *argv[]){
     //Trace mark that the i-th job ended
     trace_mark_job(i+1, STOP);
     //Log the execution informations
-    log_execution_info(RESULTS_DIR, execution_info.id, &execution_info, NULL, DEFAULT_INFO);
+    log_execution_info(RESULTS_DIR, execution_info->id, execution_info, NULL, DEFAULT_INFO);
     //Wait some time before starting the next job
     if(nanosleep(&tp, NULL) != 0){
       fprintf(stderr, "Nanosleep has been interrupted ...\n");
     }
-    parameter_data = update_parameter_3(parameter_data, 1000000);
+    parameter_data = update_parameter_3(parameter_data, 100);
   }
   //Disabling the tracing of the sched_switch event
-  event_record(E_SCHED_SWITCH, DISABLE);
+  event_record(E_SCHED_MIGRATE_TASK, DISABLE);
   //Log the kernel trace
-  log_trace(RESULTS_DIR, execution_info.id);
+  log_trace(RESULTS_DIR, execution_info->id, USE_TRACE);
   //Disabling the tracing infrastructure
   DISABLE_TRACING;
 
-  free(execution_info.id);
+  
   printf("DONE. All has been correctly saved. Terminating.\n");
 
   return 0;
@@ -118,11 +114,11 @@ int main(int argc, char *argv[]){
  * @brief It allows to print the sched_attr structure passed as parameter
  * @param attr is a pointer to the sched_attr structure that we want to print out
 */
-void print_sched_attr(struct sched_attr* attr){
-  printf("The process scheduling attributes are the following:\n");
-  printf("{\n\tSize = %u\n\tPolicy = %u\n\tFlags = %llu\n\tNice = %d\n\tPriority = %u\n\n\t**** Fields for SCHED_DEADLINE ****\n\tRuntime = %llu\n\tDeadline = %llu\n\tPeriod = %llu\n}\n", 
-          attr->size, attr->sched_policy, attr->sched_flags, attr->sched_nice, attr->sched_priority, attr->sched_runtime, attr->sched_deadline, attr->sched_period);
-}
+// void print_sched_attr(struct sched_attr* attr){
+//   printf("The process scheduling attributes are the following:\n");
+//   printf("{\n\tSize = %u\n\tPolicy = %u\n\tFlags = %llu\n\tNice = %d\n\tPriority = %u\n\n\t**** Fields for SCHED_DEADLINE ****\n\tRuntime = %llu\n\tDeadline = %llu\n\tPeriod = %llu\n}\n", 
+//           attr->size, attr->sched_policy, attr->sched_flags, attr->sched_nice, attr->sched_priority, attr->sched_runtime, attr->sched_deadline, attr->sched_period);
+// }
 
 /**
  * @brief It is a function that tells the user how to use the application that is invoked 

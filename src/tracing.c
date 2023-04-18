@@ -13,7 +13,6 @@
 #include <sched.h>
 #include "tracing.h"
 
-#define USE_TRACE_PIPE
 
 #ifdef __x86_64__
 #define __NR_sched_setattr		314
@@ -31,9 +30,8 @@
 #endif
 
 /**
- * @brief It allows to generate an identifier for an execution of a job. The identifier
- * is based on the timestamp
- * @return a string identifier. It must be freed after use.
+ * @brief Generates an identifier based on the timestamp for a program execution.
+ * @return a string identifier of the program execution. It must be freed after use.
 */
 char* generate_execution_identifier(){
   time_t current_time;
@@ -48,38 +46,96 @@ char* generate_execution_identifier(){
 }
 
 /**
- * @brief It allows to write within the specified tracing infrastructure file
- * @param file_path is the path to the tracing infrastructure file 
- * @param str is the string that will be written to the file
+ * @brief Creates an exec_info struct that will store job execution data. This structure must be deallocated using the "destroy_exec_info()" function.
+ * @param job_number is an integer that identify the job
+ * @param parameter is a long value representing the parameter utilized for the job identified by the job_number parameter
+ * @param details is a string useful to store additional data about the execution or job details. If no details are needed,
+ * set this parameter to NULL.
+ * @return a pointer to the newly created exec_info struct. Remember to deallocate this structure using the "destroy_exec_info()" function when
+ * you're done with it.
+*/
+exec_info* create_exec_info(int job_number, long parameter, char* details){
+  exec_info* e_info;
+  struct sched_attr* s_attr;
+  e_info = (exec_info*)malloc(sizeof(*e_info));
+  bzero(e_info, sizeof(*e_info));
+
+  e_info->id = generate_execution_identifier();
+
+  s_attr = get_scheduler_attr(0);
+  switch (s_attr->sched_policy){
+    case SCHED_FIFO:
+      e_info->sched_policy = "SCHED_FIFO";
+      break;
+    case SCHED_RR:
+      e_info->sched_policy = "SCHED_RR";
+      break;
+    case SCHED_BATCH:
+      e_info->sched_policy = "SCHED_BATCH";
+      break;
+    case SCHED_IDLE:
+      e_info->sched_policy = "SCHED_IDLE";
+      break;
+    case SCHED_DEADLINE:
+      e_info->sched_policy = "SCHED_DEADLINE";
+      break;
+    case SCHED_OTHER:
+      e_info->sched_policy = "SCHED_OTHER";
+      break;
+    default:
+      e_info->sched_policy = "UNDEFINED";
+      break;
+  }
+  e_info->sched_priority = s_attr->sched_priority;
+  e_info->details = details;
+  free(s_attr);
+  return e_info;
+}
+
+/**
+ * @brief It frees up the memory allocated for the exec_info struct pointed by
+ * the e_info parameter
+ * @param e_info is a pointer to an exec_info struct
+*/
+void destroy_exec_info(exec_info* e_info){
+  free(e_info->id);
+  free(e_info);
+}
+
+/**
+ * @brief Writes a string to the specified file within the tracing infrastructure directory.
+ * @param file_path The path to a file of the tracing infrastructure file.
+ * @param str A pointer to a string that will be written to the file located in file_path
 */
 void tracing_write(const char* file_path, const char* str){
   int fd;
   size_t bytes_written;
 
-  fd = open(file_path, O_WRONLY);
-  if(fd == -1){
-    fprintf(stderr, "tracing_write: error opening \"%s\" file. Aborting ...\n", file_path);
-    PRINT_ERROR;
-    exit(EXIT_FAILURE);
-  }
+  if(str != NULL){
+    fd = open(file_path, O_WRONLY);
+    if(fd == -1){
+      fprintf(stderr, "tracing_write: error opening \"%s\" file. Aborting ...\n", file_path);
+      PRINT_ERROR;
+      exit(EXIT_FAILURE);
+    }
 
-  bytes_written = write(fd, str, strlen(str));
-  if(bytes_written == -1){
-    fprintf(stderr, "tracing_write: error writing to \"%s\" file. Aborting ...\n", file_path);
-    PRINT_ERROR;
-    exit(EXIT_FAILURE);
+    bytes_written = write(fd, str, strlen(str));
+    if(bytes_written == -1){
+      fprintf(stderr, "tracing_write: error writing to \"%s\" file. Aborting ...\n", file_path);
+      PRINT_ERROR;
+      exit(EXIT_FAILURE);
+    }
+    close(fd);
   }
-
-  close(fd);
 }
 
 /**
- * @brief It permits to write on the kernel the start or the end of a generic 
- * job which is identified by the job number parameter
- * @param job_number is a integer value that identify the job
- * @param flag is a short value that can be START or STOP based on what we want to
- * mark on the kernel trace. START is used to mark the start of the job. STOP is used to mark
- * the the end of the job.
+ * @brief Writes the beginning or the end of a job, identified by the job_number parameter,
+ * on the kernel trace
+ * @param job_number An integer value that identifies a job during a program execution
+ * @param flag A short value that can be START or STOP based on what we want to mark on the kernel trace.
+ * The START flag is used to mark the beginning of the job identified by the job_number parameter. The STOP flag
+ * is used to mark the end of the job identified by the job_number parameter.
 */
 void trace_mark_job(int job_number, short flag){
   int str_max_size = ceil(log10(INT_MAX)) + 11;
@@ -97,12 +153,15 @@ void trace_mark_job(int job_number, short flag){
 }
 
 /**
- * @brief It allows you to set a custom filter for any events in any subsystem.
- * @param subsystem is a string that specify subsystem's name of the event.
- * @param event is a string that specify the event's name.
- * @param filter_str is a string indicating the filter value to use for the specified event 
+ * @brief Sets a custom filter for an event in order to change the trace output based
+ * on that filter.
+ * @param subsystem A pointer to a string that specifies subsystem's name of the event.
+ * @param event A pointer to a string that specifies the event's name.
+ * @param filter_str A pointer to a string that specifies the filter value to use.
+ * @param flag A short integer value that specifies whether to set or reset the filter. Use the SET macro to 
+ * set the filter and the RESET macro to reset it. 
 */
-void set_event_filter_custom(const char* subsystem, const char* event, const char* filter_str){
+void set_event_filter_custom(const char* subsystem, const char* event, const char* filter_str, short flag){
   char* filter_path;
   int filter_path_len;
 
@@ -119,33 +178,47 @@ void set_event_filter_custom(const char* subsystem, const char* event, const cha
     PRINT_ERROR;
     exit(EXIT_FAILURE);
   }
-  tracing_write(filter_path, filter_str);
+  if(flag == SET)
+    tracing_write(filter_path, filter_str);
+  else
+    tracing_write(filter_path, "0");
   free(filter_path);
 }
 
 /**
- * @brief It allows you to set default filters of an event
- * @param pid is the pid of the process used in some default filters.
- * @param event_flag is short value indicating the event and it's used to set the default filter defined 
- * in the library for that that event. Possible values can be: E_SCHED_SWITCH, E_SCHED_WAKE_UP and 
- * E_SCHED_MIGRATE_TASK.
+ * @brief Sets a default filter predefined in the library for an event specified by the event_flag parameter, in 
+ * order to change the trace output based on that filter.
+ * @param pid The pid of the process used to filter events related to that process.
+ * @param event_flag A short integer value indicating the event type. Possible values can be: E_SCHED_SWITCH, 
+ * E_SCHED_WAKEUP and E_SCHED_MIGRATE_TASK.
+ * @param flag A short integer value that specifies whether to set or reset the filter. Use the SET macro to 
+ * set the filter and the RESET macro to reset it. 
 */
-void set_event_filter(pid_t pid, short event_flag){
+void set_event_filter(pid_t pid, short event_flag, short flag){
   int str_max_size = ceil(log10(INT_MAX))*2 + 25;
   char filter_str[str_max_size];
 
   switch(event_flag){
     case E_SCHED_SWITCH:
-      sprintf(filter_str, "prev_pid==%d || next_pid==%d", pid, pid);
+      if(flag == SET)
+        sprintf(filter_str, "prev_pid==%d || next_pid==%d", pid, pid);
+      else
+        sprintf(filter_str, "0");
       tracing_write(SCHED_SWITCH_FILTER_PATH, filter_str);
       break;
-    case E_SCHED_WAKE_UP:
-      sprintf(filter_str, "prev_pid==%d || next_pid==%d", pid, pid);
-      tracing_write(SCHED_WAKE_UP_FILTER_PATH, filter_str);
+    case E_SCHED_WAKEUP:
+      if(flag == SET)
+        sprintf(filter_str, "pid==%d", pid);
+      else
+        sprintf(filter_str, "0");
+      tracing_write(SCHED_WAKEUP_FILTER_PATH, filter_str);
       break;
     case E_SCHED_MIGRATE_TASK:
-      sprintf(filter_str, "prev_pid==%d || next_pid==%d", pid, pid);
-      tracing_write(SCHED_WAKE_UP_FILTER_PATH, filter_str);
+      if(flag == SET)
+        sprintf(filter_str, "pid==%d", pid);
+      else
+        sprintf(filter_str, "0");
+      tracing_write(SCHED_MIGRATE_TASK_FILTER_PATH, filter_str);
       break;
     default:
       fprintf(stderr, "set_event_filter: invalid event_flag (event_flag not found). Aborting ...\n");
@@ -155,29 +228,29 @@ void set_event_filter(pid_t pid, short event_flag){
 }
 
 /**
- * @brief It is the redefinition of the sched_setattr() system call present in the linux kernel. It invokes that system 
- * call using its index into the kernel system call table. The sched_setattr() system call sets the scheduling policy and
- * associated attributes for the thread whose ID is specified in pid. If pid equals zero, the scheduling policy and attributes 
- * of the calling thread will be set.
- * @param pid is the pid of the process. If it is set to 0 it means to set the scheduler attributes for the
- * calling process
- * @param attr is a pointer to a sched_attr structure which contains the scheduler attributes to be set
- * @param flags are some flags that can be ORed togheter
+ * @brief A redefinition of the sched_setattr() system call in the Linux kernel. It invokes the system call 
+ * using its index in the kernel system call table. The sched_setattr() system call sets the scheduling policy 
+ * and attributes for the thread specified by pid. If pid is 0, the calling thread's scheduling policy and 
+ * attributes are set.
+ * @param pid The pid of the process. Set it to 0 in order to set the scheduler attributes of the
+ * calling process.
+ * @param attr A pointer to a sched_attr struct which contains the scheduler attributes to be set
+ * @param flags Some flags that can be ORed togheter
 */
 int sched_setattr(pid_t pid, const struct sched_attr *attr, unsigned int flags){
 	return syscall(__NR_sched_setattr, pid, attr, flags);
 }
 
 /**
- * @brief It is the redefinition of the sched_getattr() system call present in the linux kernel. It invokes that system 
+ * @brief A redefinition of the sched_getattr() system call in the Linux kernel. It invokes the system call
  * call using its index into the kernel system call table. The sched_getattr() system call fetches the scheduling policy 
  * and the associated attributes for the thread whose ID is specified in pid. If pid equals zero, the scheduling policy and 
  * attributes of the calling thread will be retrieved.
- * @param pid is the pid of the process. If it is set to 0 it means to retrieve the scheduler attributes for the
- * calling process
- * @param attr is a pointer to a sched_attr structure which will be filled with the current scheduler attributes of the
+ * @param pid The pid of the process. Set it to 0 in order to retrieve the scheduler attributes of the
+ * calling process.
+ * @param attr A pointer to a sched_attr strhct which will be filled with the current scheduler attributes of the
  * process identified by the pid parameter
- * @param size is the size of the sched_attr structure as known to user space.
+ * @param size The size of the sched_attr struct as known to user space.
  * @param flags is provided to allow for future extensions to the interface; in the current implementation 
  * it must be specified as 0.
 */
@@ -212,27 +285,27 @@ void set_scheduler_policy(pid_t pid, __u32 policy, __u32 priority, exec_info* e_
 
   if(e_info != NULL){
     switch (policy){
-    case SCHED_FIFO:
-      e_info->sched_policy = "SCHED_FIFO";
-      break;
-    case SCHED_RR:
-      e_info->sched_policy = "SCHED_RR";
-      break;
-    case SCHED_BATCH:
-      e_info->sched_policy = "SCHED_BATCH";
-      break;
-    case SCHED_IDLE:
-      e_info->sched_policy = "SCHED_IDLE";
-      break;
-    case SCHED_DEADLINE:
-      e_info->sched_policy = "SCHED_DEADLINE";
-      break;
-    case SCHED_OTHER:
-      e_info->sched_policy = "SCHED_OTHER";
-      break;
-    default:
-      e_info->sched_policy = "UNDEFINED";
-      break;
+      case SCHED_FIFO:
+        e_info->sched_policy = "SCHED_FIFO";
+        break;
+      case SCHED_RR:
+        e_info->sched_policy = "SCHED_RR";
+        break;
+      case SCHED_BATCH:
+        e_info->sched_policy = "SCHED_BATCH";
+        break;
+      case SCHED_IDLE:
+        e_info->sched_policy = "SCHED_IDLE";
+        break;
+      case SCHED_DEADLINE:
+        e_info->sched_policy = "SCHED_DEADLINE";
+        break;
+      case SCHED_OTHER:
+        e_info->sched_policy = "SCHED_OTHER";
+        break;
+      default:
+        e_info->sched_policy = "UNDEFINED";
+        break;
     }
     e_info->sched_priority = priority; 
   }
@@ -297,7 +370,7 @@ void event_record_custom(const char* subsystem, const char* event, short op){
 /**
  * @brief It allows you to enable or disable the recording of some specific event defined in the library.
  * @param event_flag is short value indicating the event and it's used to enable or disable the recording that event
- * in the kernel trace. Possible values can be: E_SCHED_SWITCH, E_SCHED_WAKE_UP and E_SCHED_MIGRATE_TASK.
+ * in the kernel trace. Possible values can be: E_SCHED_SWITCH, E_SCHED_WAKEUP and E_SCHED_MIGRATE_TASK.
  * @param op is short value that can be DISABLE or ENABLE and it will disable or enable the event recording respectively.
 */
 void event_record(short event_flag, short op){
@@ -309,8 +382,8 @@ void event_record(short event_flag, short op){
     case E_SCHED_SWITCH:
       tracing_write(SCHED_SWITCH_ENABLE_PATH, op_character);
       break;
-    case E_SCHED_WAKE_UP:
-      tracing_write(SCHED_WAKE_UP_ENABLE_PATH, op_character);
+    case E_SCHED_WAKEUP:
+      tracing_write(SCHED_WAKEUP_ENABLE_PATH, op_character);
       break;
     case E_SCHED_MIGRATE_TASK:
       tracing_write(SCHED_MIGRATE_TASK_ENABLE_PATH, op_character);
@@ -339,15 +412,24 @@ char* exec_info_to_str(void* info){
   int long_max_size = ceil(log10(LONG_MAX)) + 1;
   exec_info* e_info = (exec_info*)info;
   
-  
-  str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->mode) + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2;
+  if(e_info->details != NULL)
+    str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2 + strlen(e_info->details) + 2;
+  else
+    str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2 + 10 + 2 ;
+
   str = (char*)calloc(str_len, sizeof(*str));
   if(str == NULL){
     fprintf(stderr, "exec_info_to_str: error allocating memory. Aborting ...\n");
     PRINT_ERROR;
     exit(EXIT_FAILURE);
   }
-  sprintf(str, "%s, %d, %ld, %s, %s, %d\n", e_info->id, e_info->job_number, e_info->parameter, e_info->mode, e_info->sched_policy, e_info->sched_priority);
+  
+  if(e_info->details != NULL)
+    sprintf(str, "%s, %d, %ld, %s, %d, %s\n", e_info->id, e_info->job_number, e_info->parameter, e_info->sched_policy, e_info->sched_priority, e_info->details);
+  else
+    sprintf(str, "%s, %d, %ld, %s, %d, No details\n", e_info->id, e_info->job_number, e_info->parameter, e_info->sched_policy, e_info->sched_priority);
+
+
   return str;
 }
 
@@ -357,7 +439,7 @@ char* exec_info_to_str(void* info){
  * containing the execution details.
  * @param identifier is a user-defined string that identify the execution. It can be obtained by calling the "generate_execution_identifier" function.
  * @param info is a pointer to a user-defined struct that contains information about an execution. It can also be a default struct "exec_info". The default
- * structure "exec_info" has the following predefined fields related to the execution: "id", "job_number", "parameter", "mode", "sched_policy" and "sched_priority".
+ * structure "exec_info" has the following predefined fields related to the execution: "id", "job_number", "parameter", "details", "sched_policy" and "sched_priority".
  * To desire the use of the default struct, allocate that structure and pass the pointer to that structure.
  * @param info_to_str is a user-defined function that allows converting the "info" structure into a formatted string as desired. The returned string
  * should be a string with comma separated information of the execution. IT can also be a default function that converts the exec_info structure into a 
@@ -385,16 +467,16 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
     exit(EXIT_FAILURE);
   }
 
-  //Verify that the path provided by the user actually exists, if not create it
+  //Verify that the path provided by the user actually exists, if not creates it
   if(access(dir_path, F_OK) == -1) {
-    if(mkdir(dir_path, 0777) == -1){
+    if(mkdir(dir_path, 0775) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
     }
   }
 
-  //Create the subfolder containing execution informations
+  //Create the subfolder containing execution information
   dir_file_path_len = strlen(dir_path) + 1 + strlen(identifier) + 1;
   dir_file_path = (char*)calloc(dir_file_path_len, sizeof(*dir_file_path));
   if(dir_file_path == NULL){
@@ -404,7 +486,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
   }
   sprintf(dir_file_path, "%s/%s", dir_path, identifier);
   if(access(dir_file_path, F_OK) == -1) {
-    if(mkdir(dir_file_path, 0777) == -1){
+    if(mkdir(dir_file_path, 0775) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_file_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -420,7 +502,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
   }
   sprintf(file_path, "%s/exec.txt", dir_file_path);
 
-  fd = open(file_path, O_WRONLY | O_CREAT | O_APPEND, 0777);
+  fd = open(file_path, O_WRONLY | O_CREAT | O_APPEND, 0775);
   if(fd == -1){
     fprintf(stderr, "log_execution_info: error opening \"%s\" file. Aborting ...\n", file_path);
     PRINT_ERROR;
@@ -446,33 +528,37 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
  * @param dir_path is the path of the directory where will be saved the kernel trace along with its
  * execution informations
  * @param identifier is a user-defined string that identify the execution.
+ * @param mode is a short value that allows you to specify whether to use the trace_pipe or trace file to obtain kernel 
+ * trace. To desire the first behaviour set this parameter to USE_TRACE_PIPE, to desire the second behaviour set this
+ * parameter to USE_TRACE
 */
-void log_trace(const char* dir_path, char* identifier){
+void log_trace(const char* dir_path, char* identifier, short mode){
   int fd_read, fd_write;
-  char buffer[BUFFER_SIZE];
+  char buffer[STR_BUFFER_SIZE];
   char* dir_file_path;
   int dir_file_path_len;
   char* file_path;
   int file_path_len;
 
-  #ifdef USE_TRACE_PIPE
-  fd_read = open(TRACE_PIPE_PATH, O_RDONLY | O_NONBLOCK);
-  #else
-  fd_read = open(TRACE_PATH, O_RDWR);
-  #endif
+  if(mode == USE_TRACE_PIPE){
+    fd_read = open(TRACE_PIPE_PATH, O_RDONLY | O_NONBLOCK);
+  }else{
+    fd_read = open(TRACE_PATH, O_RDWR);
+  }
+
   if(fd_read == -1){
-    #ifdef USE_TRACE_PIPE
-    fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", TRACE_PIPE_PATH);
-    #else
-    fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", TRACE_PATH);
-    #endif
+    if(mode == USE_TRACE_PIPE){
+      fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", TRACE_PIPE_PATH);
+    }else{
+      fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", TRACE_PATH);
+    }
     PRINT_ERROR;
     exit(EXIT_FAILURE);
   }
 
   //Verify that the path provided by the user actually exists. If it doesn't exist, create it.
   if(access(dir_path, F_OK) == -1) {
-    if(mkdir(dir_path, 0777) == -1){
+    if(mkdir(dir_path, 0775) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -489,7 +575,7 @@ void log_trace(const char* dir_path, char* identifier){
   }
   sprintf(dir_file_path, "%s/%s", dir_path, identifier);
   if(access(dir_file_path, F_OK) == -1) {
-    if(mkdir(dir_file_path, 0777) == -1){
+    if(mkdir(dir_file_path, 0775) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_file_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -505,7 +591,7 @@ void log_trace(const char* dir_path, char* identifier){
   }
   sprintf(file_path, "%s/trace.txt", dir_file_path);
 
-  fd_write = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0777);
+  fd_write = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0775);
   if(fd_write == -1){
     fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", file_path);
     PRINT_ERROR;
@@ -513,7 +599,7 @@ void log_trace(const char* dir_path, char* identifier){
   }
 
   ssize_t bytes_read;
-  while ((bytes_read = read(fd_read, buffer, BUFFER_SIZE)) > 0) {
+  while ((bytes_read = read(fd_read, buffer, STR_BUFFER_SIZE)) > 0) {
     if(write(fd_write, buffer, bytes_read) != bytes_read) {
       fprintf(stderr, "log_trace: error writing to \"%s\" file. Aborting ...\n", file_path);
       PRINT_ERROR;
@@ -521,10 +607,8 @@ void log_trace(const char* dir_path, char* identifier){
     }
   }
 
-  #ifndef USE_TRACE_PIPE
-  write(fd_read, "0", 1);
-  #endif
-
+  if(mode == USE_TRACE) CLEAN_TRACE
+  
   // Close both files
   close(fd_read);
   close(fd_write);
