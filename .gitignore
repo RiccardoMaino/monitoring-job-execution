@@ -6,3 +6,5 @@ build
 .vscode
 #Ignoring result directory
 results
+#Ignoring docs
+docs
