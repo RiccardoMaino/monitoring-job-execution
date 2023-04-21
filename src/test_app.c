@@ -110,15 +110,6 @@ int main(int argc, char *argv[]){
   return 0;
 }
 
-/**
- * @brief It allows to print the sched_attr structure passed as parameter
- * @param attr is a pointer to the sched_attr structure that we want to print out
-*/
-// void print_sched_attr(struct sched_attr* attr){
-//   printf("The process scheduling attributes are the following:\n");
-//   printf("{\n\tSize = %u\n\tPolicy = %u\n\tFlags = %llu\n\tNice = %d\n\tPriority = %u\n\n\t**** Fields for SCHED_DEADLINE ****\n\tRuntime = %llu\n\tDeadline = %llu\n\tPeriod = %llu\n}\n", 
-//           attr->size, attr->sched_policy, attr->sched_flags, attr->sched_nice, attr->sched_priority, attr->sched_runtime, attr->sched_deadline, attr->sched_period);
-// }
 
 /**
  * @brief It is a function that tells the user how to use the application that is invoked 

@@ -3,52 +3,52 @@
 
 #include <linux/types.h>
 
-#define MAX_IDENTIFIER_SIZE 20
-#define STR_BUFFER_SIZE 4096
+#define MAX_IDENTIFIER_SIZE 20	///>Max length of an identifier generated using generate_execution_identifier() function.
+#define STR_BUFFER_SIZE 4096		///>Buffer size for reading and writing operations.
 
-#define TRACING_ON_PATH "/sys/kernel/tracing/tracing_on"
-#define TRACE_MARKER_PATH "/sys/kernel/tracing/trace_marker"
-#define TRACE_PIPE_PATH "/sys/kernel/tracing/trace_pipe"
-#define TRACE_PATH "/sys/kernel/tracing/trace"
-#define BUFFER_SIZE_KB_PATH "/sys/kernel/tracing/buffer_size_kb"
-#define EVENTS_PATH "/sys/kernel/tracing/events"
+#define TRACING_ON_PATH "/sys/kernel/tracing/tracing_on" 					///>Path to the tracing_on file of the tracefs.
+#define TRACE_MARKER_PATH "/sys/kernel/tracing/trace_marker"			///>Path to the trace_marker file of the tracefs.
+#define TRACE_PIPE_PATH "/sys/kernel/tracing/trace_pipe"					///>Path to the trace_pipe file of the tracefs.
+#define TRACE_PATH "/sys/kernel/tracing/trace"										///>Path to the trace file of the tracefs.
+#define BUFFER_SIZE_KB_PATH "/sys/kernel/tracing/buffer_size_kb"	///>Path to the buffer_size_kb file of the tracefs.
+#define EVENTS_PATH "/sys/kernel/tracing/events"									///>Path to the events directory of the tracefs.
 
-#define BUFFER_SIZE_KB 1408 ///>Default ring buffer size of the tracing infrastrucuture expressed in KB
+#define BUFFER_SIZE_KB 1408 ///>Default ring buffer size of the tracing infrastrucuture expressed in KB.
 
-#define E_SCHED_SWITCH 1
-#define E_SCHED_WAKEUP 2
-#define E_SCHED_MIGRATE_TASK 3
+#define E_SCHED_SWITCH 1 ///>Library sched_swtich event identfier.
+#define E_SCHED_WAKEUP 2 ///>Library sched_wakeup event identfier.
+#define E_SCHED_MIGRATE_TASK 3 ///>Library sched_migrate_task event identifier.
 
-#define SCHED_SWITCH_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_switch/filter" ///>Path to the filter file of the sched_switch event
-#define SCHED_SWITCH_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_switch/enable" ///>Path to the enable file of the sched_switch event
+#define SCHED_SWITCH_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_switch/filter" ///>Path to the filter file of the sched_switch event.
+#define SCHED_SWITCH_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_switch/enable" ///>Path to the enable file of the sched_switch event.
 
-#define SCHED_WAKEUP_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/filter" ///>Path to the filter file of the sched_wakeup event
-#define SCHED_WAKEUP_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/enable" ///>Path to the enable file of the sched_wakeup event
+#define SCHED_WAKEUP_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/filter" ///>Path to the filter file of the sched_wakeup event.
+#define SCHED_WAKEUP_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/enable" ///>Path to the enable file of the sched_wakeup event.
 
-#define SCHED_MIGRATE_TASK_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/filter" ///>Path to the filter file of the sched_migrate_task event
-#define SCHED_MIGRATE_TASK_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/enable" ///>Path to the enable file of the sched_migrate_task event
+#define SCHED_MIGRATE_TASK_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/filter" ///>Path to the filter file of the sched_migrate_task event.
+#define SCHED_MIGRATE_TASK_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/enable" ///>Path to the enable file of the sched_migrate_task event.
 
-#define DISABLE 0 ///>Macro in event_record()
-#define ENABLE 1
+#define DISABLE 0	///>Macro used in event_record() and event_record_custom() to disable the record of an event.
+#define ENABLE 1 	///>Macro used in event_record() and event_record_custom() to enable the record of an event.
 
-#define STOP 0
-#define START 1
+#define STOP 0		///>Macro used in trace_mark_job() to trace mark the end of a job.
+#define START 1		///>Macro used in trace_mark_job() to trace mark the beginning of a job.
 
-#define SET 0
-#define RESET 1
+#define SET 0			///>Macro used in set_event_filter() and set_event_filter_custom() to set the filter provided as a parameter.
+#define RESET 1		///>Macro used in set_event_filter() and set_event_filter_custom() to reset/clear the filter.
 
-#define DEFAULT_INFO 0
-#define USER_INFO 1
+#define DEFAULT_INFO 0	///>Macro used in log_execution_info() to specify that a user-defined struct is being used.
+#define USER_INFO 1			///>Macro used in log_execution_info() to specify that the default exec_info struct is being used.
 
-#define USE_TRACE_PIPE 0
-#define USE_TRACE 1
+#define USE_TRACE_PIPE 0	///>Macro used in log_trace() to specify that the kernel trace will be read using /sys/kernel/tracing/trace_pipe.
+#define USE_TRACE 1				///>Macro used in log_trace() to specify that the kernel trace will be read using /sys/kernel/tracing/trace.
 
-#define SCHED_OTHER 0			/* non-real-time scheduling policy */
-#define SCHED_FIFO 1			/* real-time scheduling policy */
-#define SCHED_RR 2				/* real-time scheduling policy */
-#define SCHED_BATCH 3			/* non-real-time scheduling policy */
-#define SCHED_IDLE 5			/* non-real-time scheduling policy */
-#define SCHED_DEADLINE 6	/* deadline scheduling policy */
+#define SCHED_OTHER 0			///> Non-real-time scheduling policy.
+#define SCHED_FIFO 1			///> Real-time scheduling policy.
+#define SCHED_RR 2				///> Real-time scheduling policy. 
+#define SCHED_BATCH 3			///> Non-real-time scheduling policy.
+#define SCHED_IDLE 5			///> Non-real-time scheduling policy.
+#define SCHED_DEADLINE 6	///> Deadline scheduling policy.
 
 
 /**
@@ -95,12 +95,12 @@
  * to store different job execution data.
 */
 typedef struct exec_info{
-  char* id;
-  int job_number;
-  long parameter;
-	char* sched_policy;
-	int sched_priority;
-	char* details;
+  char* id;	///> The program execution identifier.
+  int job_number; ///> A number that identifies the job in this execution.
+  long parameter; ///> The value of the parameter used for this job.
+	char* sched_policy; ///> The scheduling policy used for this job.
+	int sched_priority; ///> The scheduling priority used for this job.
+	char* details; ///> Additional details that the user can provide as a string.
 } exec_info;
 
 /**
@@ -108,14 +108,14 @@ typedef struct exec_info{
  * attributes and scheduling policy related to a thread.
 */
  struct sched_attr {
-	__u32 size;							///> Size of this structure
-	__u32 sched_policy;			///> Policy (SCHED_*)
-	__u64 sched_flags;			///> Flags
-	__s32 sched_nice; 			///> Nice value (SCHED_OTHER, SCHED_BATCH)
-	__u32 sched_priority;		///> Static priority (SCHED_FIFO, SCHED_RR)
-	__u64 sched_runtime;		///> Field for SCHED_DEADLINE (in nsec)
-	__u64 sched_deadline;		///> Field for SCHED_DEADLINE (in nsec)
-	__u64 sched_period;			///> Field for SCHED_DEADLINE (in nsec)
+	__u32 size;	///> Size in bytes of this structure
+	__u32 sched_policy;	///> Policy (SCHED_*)
+	__u64 sched_flags; ///> Flags
+	__s32 sched_nice; ///> Nice value (SCHED_OTHER, SCHED_BATCH)
+	__u32 sched_priority; ///> Static priority (SCHED_FIFO, SCHED_RR)
+	__u64 sched_runtime; ///> Field for SCHED_DEADLINE (in nsec)
+	__u64 sched_deadline; ///> Field for SCHED_DEADLINE (in nsec)
+	__u64 sched_period; ///> Field for SCHED_DEADLINE (in nsec)
 };
 
 /**
