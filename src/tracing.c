@@ -49,10 +49,10 @@ char* generate_execution_identifier(){
  * @brief Creates an exec_info struct that will store job execution data.
  * @param job_number  An integer value that identifies a job during a program execution.
  * @param parameter A long value representing the parameter utilized for the job identified by the "job_number" parameter.
- * @param details A pointer to a string useful to store additional data about execution or job details. If no details are needed,
- * set this parameter to NULL.
- * @return A pointer to the newly created exec_info struct correctly initialized. This structure must be deallocated using the 
- * "destroy_exec_info()" function when you're done with it.
+ * @param details A pointer to a string useful to store additional data about execution or job details. If no details
+ * are needed, set this parameter to NULL.
+ * @return A pointer to the newly created exec_info struct correctly initialized. This structure must be deallocated using
+ * the "destroy_exec_info()" function when you're done with it.
 */
 exec_info* create_exec_info(int job_number, long parameter, char* details){
   exec_info* e_info;
@@ -93,9 +93,8 @@ exec_info* create_exec_info(int job_number, long parameter, char* details){
 }
 
 /**
- * @brief Frees up the memory allocated for the exec_info struct pointed by
- * the e_info parameter
- * @param e_info A pointer to an exec_info struct
+ * @brief Frees up the memory allocated for the exec_info struct pointed by the "e_info" parameter.
+ * @param e_info A pointer to an exec_info struct.
 */
 void destroy_exec_info(exec_info* e_info){
   free(e_info->id);
@@ -105,8 +104,8 @@ void destroy_exec_info(exec_info* e_info){
 /**
  * @brief Writes a string to the specified file within the tracing infrastructure directory.
  * @param file_path The path to a file of the tracing infrastructure file.
- * @param str A pointer to a string that will be written to the file located in the path specified
- * by file_path parameter.
+ * @param str A pointer to a string that will be written to the file located in the path specified by 
+ * "file_path" parameter.
 */
 void tracing_write(const char* file_path, const char* str){
   int fd;
@@ -158,10 +157,10 @@ void trace_mark_job(int job_number, short flag){
  * on that filter.
  * @param subsystem A pointer to a string that specifies subsystem's name of the event.
  * @param event A pointer to a string that specifies the event's name.
- * @param filter_str A pointer to a string that specifies the filter value to use. If the RESET flag is used in the
- * "flag" parameter, this parameter could be NULL.
- * @param flag A short integer value that specifies whether to set or reset the filter. Use the SET macro to 
- * set the filter and the RESET macro to reset it. 
+ * @param filter_str A pointer to a string that specifies the filter value to use. If the RESET flag is used in
+ * the "flag" parameter, this parameter could be NULL.
+ * @param flag A short integer value that specifies whether to set or reset the filter. Use the SET macro to set
+ * the filter and the RESET macro to reset it. 
 */
 void set_event_filter_custom(const char* subsystem, const char* event, const char* filter_str, short flag){
   char* filter_path;
@@ -188,8 +187,8 @@ void set_event_filter_custom(const char* subsystem, const char* event, const cha
 }
 
 /**
- * @brief Sets a default filter predefined in the library for an event specified by the "event_flag" parameter, in 
- * order to change the trace output based on that filter.
+ * @brief Sets a default filter predefined in the library for an event specified by the "event_flag" parameter,
+ * in order to change the trace output based on that filter.
  * @param pid The pid of the process used to filter events related to that process.
  * @param event_flag A short integer value indicating the event type. Possible values can be: E_SCHED_SWITCH, 
  * E_SCHED_WAKEUP and E_SCHED_MIGRATE_TASK.
@@ -246,15 +245,15 @@ int sched_setattr(pid_t pid, const struct sched_attr *attr, unsigned int flags){
 /**
  * @brief A redefinition of the sched_getattr() system call in the Linux kernel. It invokes the system call
  * call using its index into the kernel system call table. The sched_getattr() system call fetches the scheduling policy 
- * and the associated attributes for the thread whose ID is specified in pid. If pid equals zero, the scheduling policy and 
- * attributes of the calling thread will be retrieved.
+ * and the associated attributes for the thread whose ID is specified in pid. If pid equals zero, the scheduling policy 
+ * and attributes of the calling thread will be retrieved.
  * @param pid The pid of the process. Set it to 0 in order to retrieve the scheduler attributes of the
  * calling process.
- * @param attr A pointer to a sched_attr strhct which will be filled with the current scheduler attributes of the
- * process identified by the "pid" parameter
+ * @param attr A pointer to a sched_attr strhct which will be filled with the current scheduler attributes of the process
+ * identified by the "pid" parameter.
  * @param size The size of the sched_attr struct as known to user space.
- * @param flags An unsigned integer value provided to allow for future extensions to the interface; in the current implementation 
- * it must be specified as 0.
+ * @param flags An unsigned integer value provided to allow for future extensions to the interface; in the current 
+ * implementation it must be specified as 0.
 */
 int sched_getattr(pid_t pid, struct sched_attr *attr, unsigned int size, unsigned int flags){
   return syscall(__NR_sched_getattr, pid, attr, size, flags);
@@ -343,9 +342,10 @@ struct sched_attr* get_scheduler_attr(pid_t pid){
 /**
  * @brief Allows to enable or disable the recording of an event contained in the specified subsystem.
  * @param subsystem A pointer to a string that specifies subsystem's name of the event.
- * @param event A pointer to a string that specifies the event's name. Set it to NULL if you want to use a default filter.
- * specified by the "event_flag" parameter.
- * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the event recording respectively.
+ * @param event A pointer to a string that specifies the event's name. Set it to NULL if you want to use a default 
+ * filter.
+ * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the event 
+ * recording respectively.
 */
 void event_record_custom(const char* subsystem, const char* event, short op){
   char* enable_path;
@@ -403,9 +403,9 @@ void event_record(short event_flag, short op){
 }
 
 /**
- * @brief Structures and format the information contained within the exec_info struct into a string.
+ * @brief Structures and format the information contained within the exec_info struct into a comma separated string.
  * @param info A pointer to an exec_info struct.
- * @return A pointer to the comma separeted string containing all the fields of the exec_info struct 
+ * @return A pointer to the comma separeted string containing all the fields of the exec_info struct.
 */
 char* exec_info_to_str(void* info){
   char* str;
@@ -435,22 +435,22 @@ char* exec_info_to_str(void* info){
 }
 
 /**
- * @brief Saves the execution details regarding a job on a file.
- * @param dir_path The path to a directory where to save the job execution information. It will create a subfolder in this path 
- * containing the execution details. It must be the same as the one provided in the "log_trace()" in order to save
+ * @brief Saves the job execution information to a specific file within a specified directory.
+ * @param dir_path The path to a directory where to save various job executions and trace results. It will create a subfolder in this path
+ * specific to this execution (if it doesn't already exist), and then it will create or update the "exec.txt" file by appending an new entry of 
+ * the current job execution information. The "dir_path" parameter must be the same as the one provided in the "log_trace()" in order to save
  * job execution information along with its kernel trace.
- * @param identifier The user-defined string that identifies the program execution. It can be obtained by calling the "generate_execution_identifier" function.
- * It should match the identifier field contained in the struct pointed by the "info" parameter, if that field exists in the struct.
- * @param info A pointer to a user-defined struct that contains information about an execution. It can also be a default exec_info struct. The default
- * structure exec_info has the following predefined fields related to the execution: "id", "job_number", "parameter", "details", "sched_policy" and "sched_priority".
- * To desire the use of the default struct, allocate that structure and pass the pointer to that structure.
- * @param info_to_str A user-defined function that allows converting the struct pointed by "info" parameter into a formatted string as desired. The returned string
- * should be a string with comma separated information of the execution. It can also be a default function that converts the exec_info structure into a 
- * string. To desire this latter behavior, set this parameter to NULL.
- * @param flag A short integer value used to specify whether to use the library's internal struct and function related to the execution and job information or
- * whether to use user-defined struct and function passed as parameters. To obtain the first behavior, set the value of this parameter to DEFAULT_INFO 
- * and pass an exec_info struct in "info" parameter. To obtain the second behavior, set the value of this parameter to USER_INFO and pass your defined
- * structure and function in "info" and "info_to_str" parameters.
+ * @param identifier The user-defined string that identifies the program execution. It can be obtained by calling the "generate_execution_identifier"
+ * function. It should match the identifier field contained in the struct pointed by the "info" parameter, if that field exists in the struct.
+ * @param info A pointer to a user-defined struct that contains information about an execution. It can also be a default exec_info struct. The 
+ * default structure exec_info has the following predefined fields related to the execution: "id", "job_number", "parameter", "details", 
+ * "sched_policy" and "sched_priority". To desire the use of the default struct, allocate that structure and pass a pointer to that structure.
+ * @param info_to_str A user-defined function that allows to create a comma separeted string based on the fields contained in the struct pointed 
+ * by "info" parameter. If the "info" parameter is pointer to an exec_info struct, set this parameter to NULL.
+ * @param flag A short integer value used to specify whether the interal library structure exec_info is being used to store job data or if 
+ * a user-defined structure is being used for this purpose. To specify the first behavior, set the value of this 
+ * parameter to DEFAULT_INFO and pass an exec_info struct in "info" parameter. To specify the second behavior, set the value of this parameter
+ * to USER_INFO and pass your defined structure and function in "info" and "info_to_str" parameters respectively.
 */
 void log_execution_info(const char* dir_path, const char* identifier, void* info, char* (*info_to_str)(void*), short flag){
   int fd;
@@ -527,13 +527,15 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
 
 
 /**
- * @brief Saves the kernel trace to the specified file.
- * @param dir_path The path of the directory where will be saved the kernel trace along with its jobs
- * execution information. It must be the same as the one provided in the "log_execution_info()" in order to save
+ * @brief Saves the kernel trace to a specific file within a specified directory.
+ * @param dir_path The path to a directory where to save various job executions and trace results. It will create a subfolder in this path
+ * specific to this execution (if it doesn't already exist), and then it will create the "trace.txt" file which contains the kernel trace of
+ * this program execution. The "dir_path" parameter must be the same as the one provided in the "log_execution_info()" in order to save
  * the kernel trace along with its jobs execution information.
- * @param identifier The user-defined string that identifies the program execution. It can be obtained by calling the "generate_execution_identifier" function.
- * It should match the identifier provided in the "log_execution_info()" during this program execution.
- * @param mode is a short value that allows you to specify whether to use the trace_pipe or trace file to obtain kernel 
+ * @param identifier The user-defined string that identifies the program execution. It can be obtained by calling
+ * the "generate_execution_identifier()" function. It should match the identifier provided in the "log_execution_info()"
+ * during this program execution.
+ * @param mode A short integer value that allows you to specify whether to use the trace_pipe or trace file to obtain kernel 
  * trace. To desire the first behaviour set this parameter to USE_TRACE_PIPE, to desire the second behaviour set this
  * parameter to USE_TRACE
 */
