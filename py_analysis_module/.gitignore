@@ -1,0 +1,9 @@
+#Ignoring environment files
+venv
+#Ignoring dataframe files
+dataset.csv
+#Ignoring IDE dependent file
+.idea
+.vscode
+#Ignoring graph plots
+plots
