@@ -1,5 +1,5 @@
 #Ignoring executable file
-bin
+bin/test_app
 #Ignoring object file
 build
 #Ignoring IDE dependent file

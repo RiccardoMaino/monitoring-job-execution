@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sched.h>
-#include "tracing.h"
+#include "event_tracing.h"
 
 
 #ifdef __x86_64__
@@ -48,7 +48,7 @@ char* generate_execution_identifier(){
 /**
  * @brief Creates an exec_info struct that will store job execution data.
  * @param job_number  An integer value that identifies a job during a program execution.
- * @param parameter A long value representing the parameter utilized for the job identified by the "job_number" parameter.
+ * @param parameter A long integer value representing the parameter utilized for the job identified by the "job_number" parameter.
  * @param details A pointer to a string useful to store additional data about execution or job details. If no details
  * are needed, set this parameter to NULL.
  * @return A pointer to the newly created exec_info struct correctly initialized. This structure must be deallocated using
@@ -340,8 +340,36 @@ struct sched_attr* get_scheduler_attr(pid_t pid){
 }
 
 /**
+ * @brief Allows to enable or disable the recording of all events contained in the specified subsystem.
+ * @param subsystem A pointer to a string that specifies subsystem name.
+ * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the
+ * recording of all subsystem event respectively.
+*/
+void event_record_subsystem(const char* subsystem, short op){
+  char* enable_path;
+  int enable_path_len;
+  char op_character[2] = {0};
+
+  op_character[0] = op + '0';
+  if(op == ENABLE || op == DISABLE){
+    enable_path_len = strlen(EVENTS_PATH) + 1 + strlen(subsystem) + 1 + strlen("/enable") + 1;
+    enable_path = (char*)calloc(sizeof(*enable_path), enable_path_len);
+    if(enable_path == NULL){
+      fprintf(stderr, "event_record_custom: error allocating memory. Aborting ...\n");
+      PRINT_ERROR;
+      exit(EXIT_FAILURE);
+    }
+    tracing_write(enable_path, op_character);
+    free(enable_path);
+  }else{
+    fprintf(stderr, "event_record_custom: invalid op. Aborting ...\n");
+    exit(EXIT_FAILURE);
+  }
+}
+
+/**
  * @brief Allows to enable or disable the recording of an event contained in the specified subsystem.
- * @param subsystem A pointer to a string that specifies subsystem's name of the event.
+ * @param subsystem A pointer to a string that specifies subsystem name of the event.
  * @param event A pointer to a string that specifies the event's name. Set it to NULL if you want to use a default 
  * filter.
  * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the event 

@@ -1,5 +1,5 @@
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef EVENT_TRACING_H_
+#define EVENT_TRACING_H_
 
 #include <linux/types.h>
 
@@ -28,8 +28,8 @@
 #define SCHED_MIGRATE_TASK_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/filter" ///>Path to the filter file of the sched_migrate_task event.
 #define SCHED_MIGRATE_TASK_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/enable" ///>Path to the enable file of the sched_migrate_task event.
 
-#define DISABLE 0	///>Macro used in event_record() and event_record_custom() to disable the record of an event.
-#define ENABLE 1 	///>Macro used in event_record() and event_record_custom() to enable the record of an event.
+#define DISABLE 0	///>Macro used in event_record(), event_record_custom() and event_record_subsystem() to disable the record of one or all events.
+#define ENABLE 1 	///>Macro used in event_record(), event_record_custom() and event_record_subsystem() to enable the record of one or all events.
 
 #define STOP 0		///>Macro used in trace_mark_job() to trace mark the end of a job.
 #define START 1		///>Macro used in trace_mark_job() to trace mark the beginning of a job.
@@ -68,7 +68,7 @@
     								}
 
 /**
- * @brief Allows to enable the tracing infrastrucure in order to effectively use the others functions in the library.
+ * @brief Allows to enable the tracing infrastructure in order to effectively use the others functions in the library.
 */
 #define ENABLE_TRACING tracing_write(TRACING_ON_PATH, "1"); \
 											 CLEAN_TRACE
@@ -104,7 +104,7 @@ typedef struct exec_info{
 } exec_info;
 
 /**
- * @brief A redefinition of a structure of the linux kernel that serves to set ot to retrieve the scheduler
+ * @brief A redefinition of a structure of the linux kernel that serves to set or to retrieve the scheduler
  * attributes and scheduling policy related to a thread.
 */
  struct sched_attr {
@@ -134,7 +134,7 @@ char* generate_execution_identifier();
 /**
  * @brief Creates an exec_info struct that will store job execution data.
  * @param job_number  An integer value that identifies a job during a program execution.
- * @param parameter A long value representing the parameter utilized for the job identified by the "job_number" parameter.
+ * @param parameter A long integer value representing the parameter utilized for the job identified by the "job_number" parameter.
  * @param details A pointer to a string useful to store additional data about execution or job details. If no details
  * are needed, set this parameter to NULL.
  * @return A pointer to the newly created exec_info struct correctly initialized. This structure must be deallocated using
@@ -211,8 +211,16 @@ void set_scheduler_policy(pid_t pid, __u32 policy, __u32 priority, exec_info* e_
 struct sched_attr* get_scheduler_attr(pid_t pid);
 
 /**
+ * @brief Allows to enable or disable the recording of all events contained in the specified subsystem.
+ * @param subsystem A pointer to a string that specifies subsystem name.
+ * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the
+ * recording of all subsystem event respectively.
+*/
+void event_record_subsytem(const char* subsystem, short op);
+
+/**
  * @brief Allows to enable or disable the recording of an event contained in the specified subsystem.
- * @param subsystem A pointer to a string that specifies subsystem's name of the event.
+ * @param subsystem A pointer to a string that specifies subsystem name of the event.
  * @param event A pointer to a string that specifies the event's name. Set it to NULL if you want to use a default 
  * filter.
  * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the event 
