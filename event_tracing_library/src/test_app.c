@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
 void usage(){
   printf("\nMust provide all the parameters. Usage: ");
   printf("sudo ./test_app <parameter_data> <mode> <policy> <priority>\n \
-                \t<parameter_data>: an integer value representing the first parameter to use with the first job. After it will be updated based on some function.\n \
+                \t<parameter_data>: an integer value representing the parameter to use with the first job. After the first job it will be updated based on some function defined in the code.\n \
                 \t<mode>: an integer value representing the job mode.\n \
                 \t\t1: Empty loop\n \
                 \t\t2: Exchanging variables\n \
@@ -159,7 +159,7 @@ void usage(){
                 \t\t3: SCHED_BATCH\n \
                 \t\t5: SCHED_IDLE\n \
                 \t\t6: SCHED_DEADLINE\n \
-                \t<priority>: an integer value representing the scheduler priority with SCHED_FIFO and SCHED_RR policies.\n \
+                \t<priority>: an integer value representing the scheduler priority to use with SCHED_FIFO and SCHED_RR policies.\n \
                 \t\t1-99: between 1 (low priority) and 99 (high priority) for SCHED_FIFO or SCHED_RR policies\n \
                 \t\t0: for other policies\n \
           \nAborted.\n");
