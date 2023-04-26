@@ -4,6 +4,7 @@ bin/test_app
 build
 #Ignoring IDE dependent file
 .vscode
+.idea
 #Ignoring result directory
 results
 #Ignoring docs
