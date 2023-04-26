@@ -1,0 +1,10 @@
+#Ignoring executable file
+bin/test_app
+#Ignoring object file
+build
+#Ignoring IDE dependent file
+.vscode
+#Ignoring result directory
+results
+#Ignoring docs
+docs
