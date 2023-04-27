@@ -6,7 +6,7 @@
 
 # <u>Event Tracing C Library</u> 
 ## <u>Compilation of the Code</u>
-- **test_app:** To compile the code it is sufficient to move to the *"event_tracing_library"* folder and execute the *"make app"* command.
+- **test_app:** To compile the code it is sufficient to execute *"make app"* command in your current cloned directory.
 
 ## <u>Execution of the Code</u>
 - **test_app:** To run the app, first go to the *"event_tracing_library/bin"* folder and type in a terminal *"sudo ./test_app"* followed by a series of command line arguments listed below:
