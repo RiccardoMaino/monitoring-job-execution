@@ -1,9 +1,15 @@
-#Ignoring environment files
+# Folder /venv
 venv
-#Ignoring dataframe files
-dataset.csv
-#Ignoring IDE dependent file
+
+# Folder /plots
+plots
+
+# CSV Files
+*.csv
+
+# PNG Files
+*.png
+
+# IDE 
 .idea
 .vscode
-#Ignoring graph plots
-plots
