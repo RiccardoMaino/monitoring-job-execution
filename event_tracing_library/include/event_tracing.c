@@ -29,21 +29,6 @@
 #define __NR_sched_getattr		381
 #endif
 
-/**
- * @brief Generates an identifier based on the timestamp that can be used for the entire program execution.
- * @return A pointer to a string identifier of the program execution. It must be freed after use.
-*/
-char* generate_execution_identifier(){
-  time_t current_time;
-  struct tm *tm;
-  char* identifier;
-
-  identifier = calloc(MAX_IDENTIFIER_SIZE, sizeof(*identifier));
-  current_time = time(NULL);
-  tm = localtime(&current_time);
-  strftime(identifier, MAX_IDENTIFIER_SIZE, "%Y%m%d%H%M%S", tm);
-  return identifier;
-}
 
 /**
  * @brief Creates an exec_info struct that will store job execution data.
@@ -60,7 +45,7 @@ exec_info* create_exec_info(int job_number, long parameter, char* details){
   e_info = (exec_info*)malloc(sizeof(*e_info));
   bzero(e_info, sizeof(*e_info));
 
-  e_info->id = generate_execution_identifier();
+  e_info->id = generate_execution_identifier(0);
 
   s_attr = get_scheduler_attr(0);
   switch (s_attr->sched_policy){
@@ -99,57 +84,6 @@ exec_info* create_exec_info(int job_number, long parameter, char* details){
 void destroy_exec_info(exec_info* e_info){
   free(e_info->id);
   free(e_info);
-}
-
-/**
- * @brief Writes a string to the specified file within the tracing infrastructure directory.
- * @param file_path The path to a file of the tracing infrastructure file.
- * @param str A pointer to a string that will be written to the file located in the path specified by 
- * "file_path" parameter.
-*/
-void tracing_write(const char* file_path, const char* str){
-  int fd;
-  size_t bytes_written;
-
-  if(str != NULL){
-    fd = open(file_path, O_WRONLY);
-    if(fd == -1){
-      fprintf(stderr, "tracing_write: error opening \"%s\" file. Aborting ...\n", file_path);
-      PRINT_ERROR;
-      exit(EXIT_FAILURE);
-    }
-
-    bytes_written = write(fd, str, strlen(str));
-    if(bytes_written == -1){
-      fprintf(stderr, "tracing_write: error writing to \"%s\" file. Aborting ...\n", file_path);
-      PRINT_ERROR;
-      exit(EXIT_FAILURE);
-    }
-    close(fd);
-  }
-}
-
-/**
- * @brief Writes the beginning or the end of a job, identified by the "job_number" parameter,
- * on the kernel trace.
- * @param job_number An integer value that identifies a job during a program execution.
- * @param flag A short integer value that can be START or STOP based on what we want to mark on the kernel trace.
- * The START flag is used to mark the beginning of the job identified by the "job_number" parameter. The STOP flag
- * is used to mark the end of the job identified by the "job_number" parameter.
-*/
-void trace_mark_job(int job_number, short flag){
-  int str_max_size = ceil(log10(INT_MAX)) + 11;
-  char str[str_max_size];
-
-  if(flag == START){
-    sprintf(str, "start_job=%d", job_number);
-    tracing_write(TRACE_MARKER_PATH, str);
-  }else if(flag == STOP){
-    sprintf(str, "end_job=%d", job_number);
-    tracing_write(TRACE_MARKER_PATH, str);
-  }else{
-    fprintf(stderr, "trace_mark: invalid flag\n");
-  }
 }
 
 /**
@@ -426,40 +360,30 @@ void event_record(short event_flag, short op){
   }else{
     fprintf(stderr, "event_record: invalid op. Aborting ...\n");
     exit(EXIT_FAILURE);
-  }
-  
+  } 
 }
 
 /**
- * @brief Structures and format the information contained within the exec_info struct into a comma separated string.
- * @param info A pointer to an exec_info struct.
- * @return A pointer to the comma separeted string containing all the fields of the exec_info struct.
+ * @brief Writes the beginning or the end of a job, identified by the "job_number" parameter,
+ * on the kernel trace.
+ * @param job_number An integer value that identifies a job during a program execution.
+ * @param flag A short integer value that can be START or STOP based on what we want to mark on the kernel trace.
+ * The START flag is used to mark the beginning of the job identified by the "job_number" parameter. The STOP flag
+ * is used to mark the end of the job identified by the "job_number" parameter.
 */
-char* exec_info_to_str(void* info){
-  char* str;
-  int str_len;
-  int int_max_size = ceil(log10(INT_MAX)) + 1;
-  int long_max_size = ceil(log10(LONG_MAX)) + 1;
-  exec_info* e_info = (exec_info*)info;
-  
-  if(e_info->details != NULL)
-    str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2 + strlen(e_info->details) + 2;
-  else
-    str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2 + 10 + 2 ;
+void trace_mark_job(int job_number, short flag){
+  int str_max_size = ceil(log10(INT_MAX)) + 11;
+  char str[str_max_size];
 
-  str = (char*)calloc(str_len, sizeof(*str));
-  if(str == NULL){
-    fprintf(stderr, "exec_info_to_str: error allocating memory. Aborting ...\n");
-    PRINT_ERROR;
-    exit(EXIT_FAILURE);
+  if(flag == START){
+    sprintf(str, "start_job=%d", job_number);
+    tracing_write(TRACE_MARKER_PATH, str);
+  }else if(flag == STOP){
+    sprintf(str, "end_job=%d", job_number);
+    tracing_write(TRACE_MARKER_PATH, str);
+  }else{
+    fprintf(stderr, "trace_mark: invalid flag\n");
   }
-  
-  if(e_info->details != NULL)
-    sprintf(str, "%s, %d, %ld, %s, %d, %s\n", e_info->id, e_info->job_number, e_info->parameter, e_info->sched_policy, e_info->sched_priority, e_info->details);
-  else
-    sprintf(str, "%s, %d, %ld, %s, %d, No details\n", e_info->id, e_info->job_number, e_info->parameter, e_info->sched_policy, e_info->sched_priority);
-
-  return str;
 }
 
 /**
@@ -649,4 +573,84 @@ void log_trace(const char* dir_path, char* identifier, short mode){
   close(fd_write);
   free(dir_file_path);
   free(file_path);
+}
+
+/**
+ * @brief Writes a string to the specified file within the tracing infrastructure directory.
+ * @param file_path The path to a file of the tracing infrastructure file.
+ * @param str A pointer to a string that will be written to the file located in the path specified by 
+ * "file_path" parameter.
+*/
+void tracing_write(const char* file_path, const char* str){
+  int fd;
+  size_t bytes_written;
+
+  if(str != NULL){
+    fd = open(file_path, O_WRONLY);
+    if(fd == -1){
+      fprintf(stderr, "tracing_write: error opening \"%s\" file. Aborting ...\n", file_path);
+      PRINT_ERROR;
+      exit(EXIT_FAILURE);
+    }
+
+    bytes_written = write(fd, str, strlen(str));
+    if(bytes_written == -1){
+      fprintf(stderr, "tracing_write: error writing to \"%s\" file. Aborting ...\n", file_path);
+      PRINT_ERROR;
+      exit(EXIT_FAILURE);
+    }
+    close(fd);
+  }
+}
+
+/**
+ * @brief Generates an identifier based on the timestamp that can be used for the entire program execution.
+ * @param reset A short integer value used to determine whether to create a new identifier or use the one previously created if it exists.
+ * To obtain a new identifier use the value 1 for this parameter. To obtain the identifier previously created use the value 0 for this
+ * parameter.
+ * @return A pointer to a string identifier of the program execution. It must be freed after use.
+*/
+char* generate_execution_identifier(short reset){
+  time_t current_time;
+  struct tm *tm;
+  static char* identifier;
+  if(reset || strlen(identifier) == 0){
+    identifier = calloc(MAX_IDENTIFIER_SIZE, sizeof(*identifier));
+    current_time = time(NULL);
+    tm = localtime(&current_time);
+    strftime(identifier, MAX_IDENTIFIER_SIZE, "%Y%m%d%H%M%S", tm);
+  }
+  return identifier;
+}
+
+/**
+ * @brief Structures and format the information contained within the exec_info struct into a comma separated string.
+ * @param info A pointer to an exec_info struct.
+ * @return A pointer to the comma separeted string containing all the fields of the exec_info struct.
+*/
+char* exec_info_to_str(void* info){
+  char* str;
+  int str_len;
+  int int_max_size = ceil(log10(INT_MAX)) + 1;
+  int long_max_size = ceil(log10(LONG_MAX)) + 1;
+  exec_info* e_info = (exec_info*)info;
+  
+  if(e_info->details != NULL)
+    str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2 + strlen(e_info->details) + 2;
+  else
+    str_len = strlen(e_info->id) + 2 + int_max_size + 2 + long_max_size + 2 + strlen(e_info->sched_policy) + 2 + int_max_size + 2 + 10 + 2 ;
+
+  str = (char*)calloc(str_len, sizeof(*str));
+  if(str == NULL){
+    fprintf(stderr, "exec_info_to_str: error allocating memory. Aborting ...\n");
+    PRINT_ERROR;
+    exit(EXIT_FAILURE);
+  }
+  
+  if(e_info->details != NULL)
+    sprintf(str, "%s, %d, %ld, %s, %d, %s\n", e_info->id, e_info->job_number, e_info->parameter, e_info->sched_policy, e_info->sched_priority, e_info->details);
+  else
+    sprintf(str, "%s, %d, %ld, %s, %d, No details\n", e_info->id, e_info->job_number, e_info->parameter, e_info->sched_policy, e_info->sched_priority);
+
+  return str;
 }

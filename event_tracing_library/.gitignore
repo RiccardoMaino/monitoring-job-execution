@@ -1,11 +1,14 @@
-#Ignoring executable file
+# Folder /bin
 bin/test_app
-#Ignoring object file
+bin/.dirstamp
+
+# Folder /build
 build
-#Ignoring IDE dependent file
+build/.dirstamp
+
+# IDE
 .vscode
 .idea
-#Ignoring result directory
+
+# Folder /results 
 results
-#Ignoring docs
-docs

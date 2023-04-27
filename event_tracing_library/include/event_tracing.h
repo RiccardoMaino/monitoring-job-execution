@@ -3,30 +3,9 @@
 
 #include <linux/types.h>
 
-#define MAX_IDENTIFIER_SIZE 20	///>Max length of an identifier generated using generate_execution_identifier() function.
-#define STR_BUFFER_SIZE 4096		///>Buffer size for reading and writing operations.
-
-#define TRACING_ON_PATH "/sys/kernel/tracing/tracing_on" 					///>Path to the tracing_on file of the tracefs.
-#define TRACE_MARKER_PATH "/sys/kernel/tracing/trace_marker"			///>Path to the trace_marker file of the tracefs.
-#define TRACE_PIPE_PATH "/sys/kernel/tracing/trace_pipe"					///>Path to the trace_pipe file of the tracefs.
-#define TRACE_PATH "/sys/kernel/tracing/trace"										///>Path to the trace file of the tracefs.
-#define BUFFER_SIZE_KB_PATH "/sys/kernel/tracing/buffer_size_kb"	///>Path to the buffer_size_kb file of the tracefs.
-#define EVENTS_PATH "/sys/kernel/tracing/events"									///>Path to the events directory of the tracefs.
-
-#define BUFFER_SIZE_KB 1408 ///>Default ring buffer size of the tracing infrastrucuture expressed in KB.
-
-#define E_SCHED_SWITCH 1 ///>Library sched_swtich event identfier.
-#define E_SCHED_WAKEUP 2 ///>Library sched_wakeup event identfier.
-#define E_SCHED_MIGRATE_TASK 3 ///>Library sched_migrate_task event identifier.
-
-#define SCHED_SWITCH_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_switch/filter" ///>Path to the filter file of the sched_switch event.
-#define SCHED_SWITCH_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_switch/enable" ///>Path to the enable file of the sched_switch event.
-
-#define SCHED_WAKEUP_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/filter" ///>Path to the filter file of the sched_wakeup event.
-#define SCHED_WAKEUP_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/enable" ///>Path to the enable file of the sched_wakeup event.
-
-#define SCHED_MIGRATE_TASK_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/filter" ///>Path to the filter file of the sched_migrate_task event.
-#define SCHED_MIGRATE_TASK_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/enable" ///>Path to the enable file of the sched_migrate_task event.
+#define E_SCHED_SWITCH 1 ///>Macro used to refer to the sched_swtich event.
+#define E_SCHED_WAKEUP 2 ///>Macro used to refer to the sched_wakeup event.
+#define E_SCHED_MIGRATE_TASK 3 ///>Macro used to refer to the sched_migrate_task event.
 
 #define DISABLE 0	///>Macro used in event_record(), event_record_custom() and event_record_subsystem() to disable the record of one or all events.
 #define ENABLE 1 	///>Macro used in event_record(), event_record_custom() and event_record_subsystem() to enable the record of one or all events.
@@ -43,13 +22,30 @@
 #define USE_TRACE_PIPE 0	///>Macro used in log_trace() to specify that the kernel trace will be read using /sys/kernel/tracing/trace_pipe.
 #define USE_TRACE 1				///>Macro used in log_trace() to specify that the kernel trace will be read using /sys/kernel/tracing/trace.
 
-#define SCHED_OTHER 0			///> Non-real-time scheduling policy.
-#define SCHED_FIFO 1			///> Real-time scheduling policy.
-#define SCHED_RR 2				///> Real-time scheduling policy. 
-#define SCHED_BATCH 3			///> Non-real-time scheduling policy.
-#define SCHED_IDLE 5			///> Non-real-time scheduling policy.
-#define SCHED_DEADLINE 6	///> Deadline scheduling policy.
+#define SCHED_OTHER 0			///>Non-real-time scheduling policy.
+#define SCHED_FIFO 1			///>Real-time scheduling policy.
+#define SCHED_RR 2				///>Real-time scheduling policy. 
+#define SCHED_BATCH 3			///>Non-real-time scheduling policy.
+#define SCHED_IDLE 5			///>Non-real-time scheduling policy.
+#define SCHED_DEADLINE 6	///>Deadline scheduling policy.
 
+#define BUFFER_SIZE_KB 1408 ///>Default ring buffer size of the tracing infrastrucuture expressed in KB.
+
+#define TRACING_ON_PATH "/sys/kernel/tracing/tracing_on" ///>Path to the tracing_on file of the tracefs.
+#define TRACE_MARKER_PATH "/sys/kernel/tracing/trace_marker" ///>Path to the trace_marker file of the tracefs.
+#define TRACE_PIPE_PATH "/sys/kernel/tracing/trace_pipe" ///>Path to the trace_pipe file of the tracefs.
+#define TRACE_PATH "/sys/kernel/tracing/trace" ///>Path to the trace file of the tracefs.
+#define BUFFER_SIZE_KB_PATH "/sys/kernel/tracing/buffer_size_kb" ///>Path to the buffer_size_kb file of the tracefs.
+#define EVENTS_PATH "/sys/kernel/tracing/events" ///>Path to the events directory of the tracefs.
+#define SCHED_SWITCH_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_switch/filter" ///>Path to the filter file of the sched_switch event.
+#define SCHED_SWITCH_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_switch/enable" ///>Path to the enable file of the sched_switch event.
+#define SCHED_WAKEUP_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/filter" ///>Path to the filter file of the sched_wakeup event.
+#define SCHED_WAKEUP_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_wakeup/enable" ///>Path to the enable file of the sched_wakeup event.
+#define SCHED_MIGRATE_TASK_FILTER_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/filter" ///>Path to the filter file of the sched_migrate_task event.
+#define SCHED_MIGRATE_TASK_ENABLE_PATH "/sys/kernel/tracing/events/sched/sched_migrate_task/enable" ///>Path to the enable file of the sched_migrate_task event.
+
+#define MAX_IDENTIFIER_SIZE 20	///>Max length of an identifier generated using generate_execution_identifier() function.
+#define STR_BUFFER_SIZE 4096		///>Buffer size for reading and writing operations.
 
 /**
  * @brief Changes the buffer size used to store the kernel trace.
@@ -119,19 +115,6 @@ typedef struct exec_info{
 };
 
 /**
- * @brief Structures and format the information contained within the exec_info struct into a comma separated string.
- * @param info A pointer to an exec_info struct.
- * @return A pointer to the comma separeted string containing all the fields of the exec_info struct.
-*/
-char* exec_info_to_str(void* info);
-
-/**
- * @brief Generates an identifier based on the timestamp that can be used for the entire program execution.
- * @return A pointer to a string identifier of the program execution. It must be freed after use.
-*/
-char* generate_execution_identifier();
-
-/**
  * @brief Creates an exec_info struct that will store job execution data.
  * @param job_number  An integer value that identifies a job during a program execution.
  * @param parameter A long integer value representing the parameter utilized for the job identified by the "job_number" parameter.
@@ -147,24 +130,6 @@ exec_info* create_exec_info(int job_number, long parameter, char* details);
  * @param e_info A pointer to an exec_info struct.
 */
 void destroy_exec_info(exec_info* e_info);
-
-/**
- * @brief Writes a string to the specified file within the tracing infrastructure directory.
- * @param file_path The path to a file of the tracing infrastructure file.
- * @param str A pointer to a string that will be written to the file located in the path specified by 
- * "file_path" parameter.
-*/
-void tracing_write(const char* file_path, const char* str);
-
-/**
- * @brief Writes the beginning or the end of a job, identified by the "job_number" parameter,
- * on the kernel trace.
- * @param job_number An integer value that identifies a job during a program execution.
- * @param flag A short integer value that can be START or STOP based on what we want to mark on the kernel trace.
- * The START flag is used to mark the beginning of the job identified by the "job_number" parameter. The STOP flag
- * is used to mark the end of the job identified by the "job_number" parameter.
-*/
-void trace_mark_job(int job_number, short flag);
 
 /**
  * @brief Sets a custom filter for an event in order to change the trace output based
@@ -237,6 +202,16 @@ void event_record_custom(const char* subsystem, const char* event, short op);
 void event_record(short event_flag, short op);
 
 /**
+ * @brief Writes the beginning or the end of a job, identified by the "job_number" parameter,
+ * on the kernel trace.
+ * @param job_number An integer value that identifies a job during a program execution.
+ * @param flag A short integer value that can be START or STOP based on what we want to mark on the kernel trace.
+ * The START flag is used to mark the beginning of the job identified by the "job_number" parameter. The STOP flag
+ * is used to mark the end of the job identified by the "job_number" parameter.
+*/
+void trace_mark_job(int job_number, short flag);
+
+/**
  * @brief Saves the job execution information to a specific file within a specified directory.
  * @param dir_path The path to a directory where to save various job executions and trace results. It will create a subfolder in this path
  * specific to this execution (if it doesn't already exist), and then it will create or update the "exec.txt" file by appending an new entry of 
@@ -270,4 +245,29 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
  * parameter to USE_TRACE
 */
 void log_trace(const char* dir_path, char* identifier, short mode);
+
+/**
+ * @brief Writes a string to the specified file within the tracing infrastructure directory.
+ * @param file_path The path to a file of the tracing infrastructure file.
+ * @param str A pointer to a string that will be written to the file located in the path specified by 
+ * "file_path" parameter.
+*/
+void tracing_write(const char* file_path, const char* str);
+
+/**
+ * @brief Generates an identifier based on the timestamp that can be used for the entire program execution.
+ * @param reset A short integer value used to determine whether to create a new identifier or use the one previously created if it exists.
+ * To obtain a new identifier use the value 1 for this parameter. To obtain the identifier previously created use the value 0 for this
+ * parameter.
+ * @return A pointer to a string identifier of the program execution. It must be freed after use.
+*/
+char* generate_execution_identifier(short reset);
+
+/**
+ * @brief Structures and format the information contained within the exec_info struct into a comma separated string.
+ * @param info A pointer to an exec_info struct.
+ * @return A pointer to the comma separeted string containing all the fields of the exec_info struct.
+*/
+char* exec_info_to_str(void* info);
+
 #endif
