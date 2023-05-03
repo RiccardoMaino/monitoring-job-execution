@@ -56,10 +56,11 @@ Once we have *"pip"* set up correctly, the necessary packages to install are:
 
 ## <u>Execution of the Code</u>
 - **main:** To run the app, first move under the *"/py_analysis_module"* folder by running ```cd py_analysis_module``` command. After that run `python3 main.py` followed by a series of optional command line arguments listed below:
-  1. **--param PARAM:**  A long integer used to set the parameter value to use with the first job. Default is 10000. The PARAM argument must be a positive long integer. After the first job, the parameter used with the others jobs will be calculated based on a function defined in the code.
-  2. **--csvpath MODE:** An integer used to set the kind of the job to perform. Default is 3. The MODE argument must be an integer value between the ones here:
-      * 1: Empty loop
-      * 2: Exchanging variables
-      * 3: Ordering a list
+  1. **--respath RESPATH:**: A string used to set the path where to find the information used to create (or to update) the dataset containing records regarding job execution details. (default: ../event_tracing_library/results)
+  2. **--csvpath CSVPATH:**: A string used to set the path to a file where to store (or to find) the newly (or the previously) created dataset. (default: dataset.csv)
+  3. **--plotspath PLOTSPATH**: A string used to set the path where to store plots regarding the dataset data. (default: plots)
+  4. **--name NAME**: a string used to specify the process name of the program traced using the event_tracing C library. (default: test_app)
+  5. **--delcsv**: A flag which if specified allows to delete the dataset previously created. (default: False)
+  6. **--delplots**: A flag which if specified allows to delete the plots, related to the dataset, previously created. (default: False)
 ## <u>Output</u>
-After running the code, a dataset will be created (or updated) in the path specified by the commands line arguments with **--csvpath** option. The data used to create the dataset is taken from the folder used with the *“event_tracing”* C library to save tracing data results. In addition, several plots useful for analyzing the data contained in the dataset will be generated within the folder specified by the command line arguments.
+After running the code, a dataset will be created (or updated) in the path specified by the commands line arguments with **--csvpath** option. The data used to create the dataset is taken from the folder used with the *“event_tracing”* C library to save tracing data results, the defaults one is *"../event_tracing_library/results"*. In addition, several plots useful for analyzing the data contained in the dataset will be generated within the folder specified by the command line arguments, the defaults one is *"/plots"*.
