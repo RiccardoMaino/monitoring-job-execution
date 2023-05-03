@@ -1,6 +1,9 @@
 # Folder /venv
 venv
 
+# Folder /__pycache__
+__pycache__
+
 # Folder /plots
 plots
 
