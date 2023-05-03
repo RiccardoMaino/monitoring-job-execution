@@ -13,17 +13,17 @@
 #include "../include/event_tracing.h"
 #include "list.h"
 
-#define RESULTS_DIR "../results"
+#define DEFAULT_RESPATH "../results"
 #define DEFAULT_PARAMETER 10000
 #define DEFAULT_MODE 3
-#define DEFAULT_MAX_JOBS 25
+#define DEFAULT_MAX_JOBS 50
 #define DEFAULT_POLICY SCHED_OTHER
 #define DEFAULT_PRIORITY 0
 #define MAX_VALUE 1000000
 #define MIN_VALUE 100
 
 /**
- * @brief A structure that contains the command line arguments parsed from the user input, that
+ * @brief A structure used to contain the command line arguments parsed from the user input. These arguments
  * will be used to set up some options of this execution.
 */
 struct arguments {
@@ -32,6 +32,7 @@ struct arguments {
   int policy; //It is an integer value representing the scheduling policy to use with the jobs executed
   int priority; //It is an integer value representing the scheduler priority to use with the jobs executed
   int jobs; //It is an integer value representing the number of jobs to perform
+  char* respath; //It is a string value representing the path where to save all the results
 };
 
 //Program version.
@@ -58,13 +59,15 @@ static char doc[] = "This program demonstrates the usage of the 'event_tracing' 
 \t1 (low priority) to 99 (high priority): For SCHED_FIFO or SCHED_RR.\n\
 \t0: For all the others policies.\n";
 
+// \nSCHED_OTHER: Non-real-time scheduling policy.\n\tSCHED_FIFO: Real-time scheduling policy.\n\tSCHED_RR: Real-time scheduling policy.\n\tSCHED_BATCH: Non-real-time scheduling policy.\n\tSCHED_IDLE: Non-real-time scheduling policy.\n\tSCHED_DEADLINE: Deadline scheduling policy.\n Default is SCHED_OTHER.
 // The command line options accepted to obtain the arguments contained in the 'struc arguments' structure
 static struct argp_option options[] = {
-  {"param", 'p', "PARAM", 0, "Set the parameter value to use with the first job. PARAM must be a positive long integer."},
-  {"mode", 'm', "MODE", 0, "Set the kind of the job to perform. MODE must be an integer value. Check the below section to see other details about the MODE argument."},
-  {"policy", 's', "POLICY", 0, "Set the scheduling policy of the jobs executed. POLICY must be a string. Check the below section to see other details about the POLICY argument."},
-  {"priority", 'r', "PRIO", 0, "Set the scheduler priority of the jobs executed. PRIO must be an intger value. Check the below section to see other details about the PRIO argument."},
-  {"jobs", 'j', "JOBS", 0, "Set the number of jobs executed. JOBS must be a positive integer."},
+  {"param", 'p', "PARAM", 0, "A long integer used to set the parameter value to use with the first job. The PARAM argument must be a positive long integer. Default is 10000."},
+  {"mode", 'm', "MODE", 0, "An integer used to set the kind of the job to perform. The MODE argument must be an integer value between the ones specified in the below section. Default is 3."},
+  {"policy", 's', "POLICY", 0, "A string used to set the scheduling policy of the jobs executed. The POLICY argument must be a string value between the ones specified in the below section. Default is SCHED_OTHER."},
+  {"priority", 'i', "PRIO", 0, "An integer used to set the scheduler priority of the jobs executed. The PRIO argument must be an intger value between the ones specified in the below section. Default is 0."},
+  {"jobs", 'j', "JOBS", 0, "An integer used to set the number of jobs executed. The JOBS argument must be a positive integer. Default is 50."},
+  {"respath", 'r', "RESPATH", 0, "A string used to set the path where to save all the tracing related data. Default is '../results'."},
   {0}
 };
 
@@ -108,7 +111,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       else
         argp_error(state, "Invalid argument for '--policy' option");
       break;
-    case 'r':
+    case 'i':
       arguments->priority = strtol(arg, &end_ptr, 10);
       if(errno != 0 || end_ptr == optarg || *end_ptr != '\0'){
         argp_error(state, "Error converting to integer the argument for '--priority' option");
@@ -118,15 +121,23 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       }
       break;
     case 'j':
-      if(arguments->jobs <= 0){
+      if(arguments->jobs < 0){
         argp_error(state, "Invalid argument for '--njobs' option");
       }
+      break;
+    case 'r':
+      arguments->respath = arg;
       break;
     case ARGP_KEY_END:
       if(state->arg_num != 0){
         argp_error(state, "Found one or more no-option arguments");
       }
-
+      if((arguments->policy == SCHED_FIFO || arguments->policy == SCHED_RR) && (arguments->priority == 0)){
+        argp_error(state, "Invalid argument for '--priority' option used with SCHED_FIFO or SCHED_RR policy. It must be between 1 and 99");
+      }
+      if((arguments->policy != SCHED_FIFO && arguments->policy != SCHED_RR) && (arguments->priority != 0)){
+        argp_error(state, "Invalid argument for '--priority' option used with a different policy from SCHED_FIFO and SCHED_RR. It must be 0");
+      }
       break;
     default:
       return ARGP_ERR_UNKNOWN;
@@ -157,6 +168,7 @@ int main(int argc, char *argv[]){
   arguments.policy = DEFAULT_POLICY;
   arguments.priority = DEFAULT_PRIORITY;
   arguments.jobs = DEFAULT_MAX_JOBS;
+  arguments.respath = DEFAULT_RESPATH;
 
   // Parse command line arguments
   if(argp_parse(&argp, argc, argv, 0, 0, &arguments) != 0){
@@ -168,6 +180,8 @@ int main(int argc, char *argv[]){
   tp.tv_sec = 1;
   tp.tv_nsec = 0;
   pid = getpid();
+
+  printf("*** Starting ...\n");
 
   // Init the exec_info struct
   execution_info = create_exec_info(0, arguments.param, NULL);
@@ -183,14 +197,18 @@ int main(int argc, char *argv[]){
     execution_info->details = "EmptyLoop";
   }
 
+  printf("*** Execution ID: %s\n", execution_info->id);
 
-  printf("Executing ...\n");
   // Setting the scheduling policy and priority
   set_scheduler_policy(0, arguments.policy, arguments.priority, execution_info);
   // Enabling the tracing infrastructure 
   ENABLE_TRACING;
   // Setting up the filter of the sched_switch event
   set_event_filter(pid, E_SCHED_SWITCH, SET);
+
+  printf("*** Extimated time %d \u00B1 5 seconds ...\n", arguments.jobs);
+  printf("*** Executing ...\n");
+
   // Enabling the tracing of the sched_switch event
   event_record(E_SCHED_SWITCH, ENABLE);
   for(int i = 0; i<arguments.jobs; i++){
@@ -204,7 +222,7 @@ int main(int argc, char *argv[]){
     // Trace mark that the i-th job ended
     trace_mark_job(i+1, STOP);
     // Log the execution informations
-    log_execution_info(RESULTS_DIR, execution_info->id, execution_info, NULL, DEFAULT_INFO);
+    log_execution_info(arguments.respath, execution_info->id, execution_info, NULL, DEFAULT_INFO);
     // Wait some time before starting the next job
     if(nanosleep(&tp, NULL) != 0){
       fprintf(stderr, "Nanosleep has been interrupted ...\n");
@@ -214,11 +232,12 @@ int main(int argc, char *argv[]){
   // Disabling the tracing of the sched_switch event
   event_record(E_SCHED_SWITCH, DISABLE);
   // Log the kernel trace
-  log_trace(RESULTS_DIR, execution_info->id, USE_TRACE);
+  log_trace(arguments.respath, execution_info->id, USE_TRACE);
   // Disabling the tracing infrastructure
   DISABLE_TRACING;
   
-  printf("DONE. All has been correctly saved. Terminating.\n");
+  printf("*** DONE. All has been correctly saved under '%s' path\n", arguments.respath);
+  printf("*** Terminating\n");
   return 0;
 }
 

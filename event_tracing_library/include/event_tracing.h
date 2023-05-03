@@ -48,8 +48,8 @@
 #define STR_BUFFER_SIZE 4096		///>Buffer size for reading and writing operations.
 
 /**
- * @brief Changes the buffer size used to store the kernel trace.
- * @param str_buffer_kb A pointer to a string which represents the new number of kb of the buffer.
+ * @brief Changes the ring buffer size used to store the kernel trace.
+ * @param str_buffer_kb A pointer to a string which represents the new number of kb of the ring buffer.
 */
 #define SET_BUFFER_SIZE(str_buffer_kb)	if(str_buffer_kb != NULL) { \
 																					tracing_write(BUFFER_SIZE_KB_PATH, str_buffer_kb);\
@@ -70,7 +70,7 @@
 											 CLEAN_TRACE
 
 /**
- * @brief Allows to disable the tracing infrastrucure that was previously enabled.
+ * @brief Allows to disable the tracing infrastructure that was previously enabled.
 */
 #define DISABLE_TRACING tracing_write(TRACING_ON_PATH, "0");
 

@@ -613,9 +613,9 @@ void tracing_write(const char* file_path, const char* str){
 char* generate_execution_identifier(short reset){
   time_t current_time;
   struct tm *tm;
-  static char* identifier;
-  if(reset || strlen(identifier) == 0){
-    identifier = calloc(MAX_IDENTIFIER_SIZE, sizeof(*identifier));
+  static char* identifier = NULL;
+  if(reset || identifier == NULL){
+    identifier = (char*)calloc(MAX_IDENTIFIER_SIZE, sizeof(*identifier));
     current_time = time(NULL);
     tm = localtime(&current_time);
     strftime(identifier, MAX_IDENTIFIER_SIZE, "%Y%m%d%H%M%S", tm);
