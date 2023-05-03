@@ -44,7 +44,7 @@ If pip isn’t already installed, then first try to bootstrap it from the standa
 &nbsp;&nbsp;&nbsp;`python3 -m ensurepip --default-pip`
 
 If that still doesn’t allow you to run `python -m pip`:
-- Securely download [get-pip.py](https://https://bootstrap.pypa.io/get-pip.py)
+- Securely download [get-pip.py](https://bootstrap.pypa.io/get-pip.py)
 - Run `python get-pip.py`. This will install or upgrade *"pip"*
 
 
