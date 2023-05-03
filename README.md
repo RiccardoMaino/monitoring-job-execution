@@ -1,6 +1,6 @@
 ## <u>Index</u>
-- [Event Tracing C Library](#EventTracingCLibrary)
-- [Analysis Module Python](#AnalysisModulePython)
+- [Event Tracing C Library](#event-tracing-c-library)
+- [Analysis Module Python](#analysis-module-python)
 
 ------
 
