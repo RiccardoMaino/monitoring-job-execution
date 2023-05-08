@@ -13,12 +13,13 @@
 #include "../include/event_tracing.h"
 #include "list.h"
 
-#define DEFAULT_RESPATH "../results"
-#define DEFAULT_PARAMETER 10000
-#define DEFAULT_MODE 3
-#define DEFAULT_MAX_JOBS 50
-#define DEFAULT_POLICY SCHED_OTHER
-#define DEFAULT_PRIORITY 0
+#define DEFAULT_RESPATH "../results" //Default value of RESPATH command line argument
+#define DEFAULT_PARAMETER 10000 //Default value of PARAM command line argument
+#define DEFAULT_MODE 3 //Default value of MODE command line argument
+#define DEFAULT_MAX_JOBS 50 //Default value of JOBS command line argument
+#define DEFAULT_POLICY SCHED_OTHER //Default value of POLICY command line argument
+#define DEFAULT_PRIORITY 0 //Default value of PRIO command line argument
+#define DEFAULT_NOWAIT 0 //Default flag of NOWAIT command line argument
 #define MAX_VALUE 1000000
 #define MIN_VALUE 100
 
@@ -33,6 +34,7 @@ struct arguments {
   int priority; //It is an integer value representing the scheduler priority to use with the jobs executed
   int jobs; //It is an integer value representing the number of jobs to perform
   char* respath; //It is a string value representing the path where to save all the results
+  short nowait; //It is a flag used to specify to omit waiting between each job.
 };
 
 //Program version.
@@ -59,7 +61,6 @@ static char doc[] = "This program demonstrates the usage of the 'event_tracing' 
 \t1 (low priority) to 99 (high priority): For SCHED_FIFO or SCHED_RR.\n\
 \t0: For all the others policies.\n";
 
-// \nSCHED_OTHER: Non-real-time scheduling policy.\n\tSCHED_FIFO: Real-time scheduling policy.\n\tSCHED_RR: Real-time scheduling policy.\n\tSCHED_BATCH: Non-real-time scheduling policy.\n\tSCHED_IDLE: Non-real-time scheduling policy.\n\tSCHED_DEADLINE: Deadline scheduling policy.\n Default is SCHED_OTHER.
 // The command line options accepted to obtain the arguments contained in the 'struc arguments' structure
 static struct argp_option options[] = {
   {"param", 'p', "PARAM", 0, "A long integer used to set the parameter value to use with the first job. The PARAM argument must be a positive long integer. Default is 10000."},
@@ -68,13 +69,14 @@ static struct argp_option options[] = {
   {"priority", 'i', "PRIO", 0, "An integer used to set the scheduler priority of the jobs executed. The PRIO argument must be an intger value between the ones specified in the below section. Default is 0."},
   {"jobs", 'j', "JOBS", 0, "An integer used to set the number of jobs executed. The JOBS argument must be a positive integer. Default is 50."},
   {"respath", 'r', "RESPATH", 0, "A string used to set the path where to save all the tracing related data. Default is '../results'."},
+  {"nowait", 'w', "NOWAIT", OPTION_ARG_OPTIONAL, "A flag used to specify to omit waiting of one second between each job."},
   {0}
 };
 
 //Function used by the command line arguments parser to correctly obtain arguments.
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
   char *end_ptr;
-  /* Get the input argument from argp_parse, which we know is a pointer to our arguments structure. */
+  //Get the input argument from argp_parse, which we know is a pointer to our arguments structure.
   struct arguments *arguments = state->input;
   switch(key){
     case 'p':
@@ -128,6 +130,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case 'r':
       arguments->respath = arg;
       break;
+    case 'w':
+      arguments->nowait = 1;
+      break;
     case ARGP_KEY_END:
       if(state->arg_num != 0){
         argp_error(state, "Found one or more no-option arguments");
@@ -159,7 +164,6 @@ int main(int argc, char *argv[]){
   struct arguments arguments;
   int pid;                      //It is the PID of the process
   void (*do_work_ptr)(void *);  //It is a pointer to the job to execute based on the mode selected
-  char *str, *end_ptr;          //They are char pointers used by the program
   struct timespec tp;           //It is a structure needed by the nanosleep to specify the number of sec and nsec to wait
   exec_info* execution_info;    //It is a pointer to a structure that contains execution information
   
@@ -169,6 +173,7 @@ int main(int argc, char *argv[]){
   arguments.priority = DEFAULT_PRIORITY;
   arguments.jobs = DEFAULT_MAX_JOBS;
   arguments.respath = DEFAULT_RESPATH;
+  arguments.nowait = DEFAULT_NOWAIT;
 
   // Parse command line arguments
   if(argp_parse(&argp, argc, argv, 0, 0, &arguments) != 0){
@@ -206,7 +211,8 @@ int main(int argc, char *argv[]){
   // Setting up the filter of the sched_switch event
   set_event_filter(pid, E_SCHED_SWITCH, SET);
 
-  printf("*** Extimated time %d \u00B1 5 seconds ...\n", arguments.jobs);
+  if(arguments.nowait) printf("*** Extimated time of few seconds ...\n");
+  else printf("*** Extimated time %d \u00B1 5 seconds ...\n", arguments.jobs);
   printf("*** Executing ...\n");
 
   // Enabling the tracing of the sched_switch event
@@ -224,7 +230,7 @@ int main(int argc, char *argv[]){
     // Log the execution informations
     log_execution_info(arguments.respath, execution_info->id, execution_info, NULL, DEFAULT_INFO);
     // Wait some time before starting the next job
-    if(nanosleep(&tp, NULL) != 0){
+    if(!arguments.nowait && nanosleep(&tp, NULL) != 0){
       fprintf(stderr, "Nanosleep has been interrupted ...\n");
     }
     arguments.param = update_parameter_3(arguments.param, 10000);

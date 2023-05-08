@@ -134,8 +134,8 @@ void destroy_exec_info(exec_info* e_info);
 /**
  * @brief Sets a custom filter for an event in order to change the trace output based
  * on that filter.
- * @param subsystem A pointer to a string that specifies subsystem's name of the event.
- * @param event A pointer to a string that specifies the event's name.
+ * @param subsystem A pointer to a string that specifies subsystem name of the event.
+ * @param event A pointer to a string that specifies the event name.
  * @param filter_str A pointer to a string that specifies the filter value to use. If the RESET flag is used in
  * the "flag" parameter, this parameter could be NULL.
  * @param flag A short integer value that specifies whether to set or reset the filter. Use the SET macro to set
@@ -178,26 +178,26 @@ struct sched_attr* get_scheduler_attr(pid_t pid);
 /**
  * @brief Allows to enable or disable the recording of all events contained in the specified subsystem.
  * @param subsystem A pointer to a string that specifies subsystem name.
- * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the
+ * @param op A short integer value that can be the macros DISABLE or ENABLE and it will disable or enable the
  * recording of all subsystem event respectively.
 */
-void event_record_subsytem(const char* subsystem, short op);
+void event_record_subsystem(const char* subsystem, short op);
 
 /**
  * @brief Allows to enable or disable the recording of an event contained in the specified subsystem.
  * @param subsystem A pointer to a string that specifies subsystem name of the event.
  * @param event A pointer to a string that specifies the event's name. Set it to NULL if you want to use a default 
  * filter.
- * @param op A short integer value that can be DISABLE (0) or ENABLE (1) and it will disable or enable the event 
+ * @param op A short integer value that can be the macros DISABLE or ENABLE and it will disable or enable the event 
  * recording respectively.
 */
 void event_record_custom(const char* subsystem, const char* event, short op);
 
 /**
  * @brief Allows to enable or disable the recording of some specific event defined in the library.
- * @param event_flag is short value indicating the event and it's used to enable or disable the recording that event
+ * @param event_flag A short value indicating the event and it's used to enable or disable the recording of that event
  * in the kernel trace. Possible values can be: E_SCHED_SWITCH, E_SCHED_WAKEUP and E_SCHED_MIGRATE_TASK.
- * @param op is short value that can be DISABLE or ENABLE and it will disable or enable the event recording respectively.
+ * @param op A short value that can be the macros DISABLE or ENABLE and it will disable or enable the event recording respectively.
 */
 void event_record(short event_flag, short op);
 
@@ -240,7 +240,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
  * @param identifier The user-defined string that identifies the program execution. It can be obtained by calling
  * the "generate_execution_identifier()" function. It should match the identifier provided in the "log_execution_info()"
  * during this program execution.
- * @param mode A short integer value that allows you to specify whether to use the trace_pipe or trace file to obtain kernel 
+ * @param mode A short integer value that allows you to specify whether to use the trace_pipe or trace file of the tracefs to obtain kernel 
  * trace. To desire the first behaviour set this parameter to USE_TRACE_PIPE, to desire the second behaviour set this
  * parameter to USE_TRACE
 */
