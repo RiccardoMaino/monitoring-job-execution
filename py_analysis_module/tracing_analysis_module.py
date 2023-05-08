@@ -83,14 +83,17 @@ def load_dataframe(df_path: str, columns: list[str] = None) -> pd.DataFrame:
         the DataFrame.
     """
     if os.path.exists(df_path):
-        return pd.read_csv(df_path)
+        df = pd.read_csv(df_path)
     else:
         if columns is None:
-            return pd.DataFrame(columns=COLUMNS)
+            df = pd.DataFrame(columns=COLUMNS)
         else:
             if "id" not in columns:
                 columns.insert(0, "id")
-            return pd.DataFrame(columns=columns)
+            df = pd.DataFrame(columns=columns)
+    if "id" in df.columns:
+        df["id"] = df["id"].astype(str)
+    return df
 
 
 def save_dataframe(df: pd.DataFrame, path: str, drop_na: bool = True, sort_by: list[str] = None, ascending: bool = True):
@@ -382,9 +385,6 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
         module.
     """
     corr_matrix = df.corr(numeric_only=True)
-    if "id" in df.columns:
-        corr_matrix.drop("id", axis=0, inplace=True)
-        corr_matrix.drop("id", axis=1, inplace=True)
     sns.heatmap(data=corr_matrix, annot=True, cmap=color_palette)
     if title is not None:
         plt.title(title)

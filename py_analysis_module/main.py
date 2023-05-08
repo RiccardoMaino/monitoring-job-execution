@@ -1,6 +1,7 @@
 import argparse
 import os
-import event_tracing_module as etm
+import shutil
+import tracing_analysis_module as tam
 
 
 class CustomFormatter(argparse.HelpFormatter):
@@ -38,7 +39,11 @@ def main():
                         default="test_app",
                         help="a string used to specify the process name of the program traced using the event_tracing "
                              "C library. (default: test_app)",
-                        required=False)
+                        required=False),
+    parser.add_argument("-l", "--makeplots",
+                        action="store_true",
+                        help="a flag which if specified allows to create useful plots for the analysis of records "
+                             "contained in the dataset created (or updated). (default: False)")
     parser.add_argument("-d", "--delcsv",
                         action="store_true",
                         help="a flag which if specified allows to delete the dataset previously created. (default: "
@@ -52,20 +57,84 @@ def main():
     args = parser.parse_args()
 
     if args.delcsv and os.path.isfile(args.csvpath):
+        print("*** Deleting the dataset previously created ...")
         os.remove(args.csvpath)
 
     if args.delplots and os.path.isdir(args.plotspath):
-        os.rmdir(args.plotspath)
+        print("*** Deleting the plots previously created ...")
+        shutil.rmtree(args.plotspath, ignore_errors=True)
 
-    df = etm.load_dataframe(args.csvpath)
-    etm.update_data(df=df, dir_result_path=args.respath, process_name=args.name)
+    print("*** Loading the dataset ...", end='')
+    df = tam.load_dataframe(args.csvpath)
+    print("DONE")
+    print("*** Updating the dataset ...", end='')
+    tam.update_data(df=df, dir_result_path=args.respath, process_name=args.name)
+    print("DONE")
+    print("*** Saving the dataset ...", end='')
+    tam.save_dataframe(df, args.csvpath, sort_by=["mode", "parameter", "job_number"])
+    print("DONE")
 
-    # print(df)
-    # etd.save_dataframe(df, df_path, sort_by=["mode", "parameter", "job_number"])
+    if args.makeplots:
+        print("*** Creating plots for analysis ...", end='')
+        tam.set_sns_config(100, (15, 10), 1.2)
 
-    # etd.set_sns_config(100, (15, 10), 1.2)
-    # etd.heatmap_plot(df=df, file_name="heatmap_empty.png", to_save=True)
-    # etd.join_plot(df=df, x_var="parameter", y_var="num_sched_switches", file_name="joinplot_empty.png", to_save=True)
+        df["effective_cpu_time"] = df["effective_cpu_time"] * 1000
+        df["total_cpu_time"] = df["total_cpu_time"] * 1000
+        df["diff_cpu_time"] = df["diff_cpu_time"] * 1000
+
+        df_empty = df[df["mode"] == "EmptyLoop"]
+        df_variable = df[df["mode"] == "VariablesExchanging"]
+        df_list = df[df["mode"] == "ListOrdering"]
+
+        if len(df_empty) >= 20:
+            tam.heatmap_plot(df=df_empty, file_name="hmap_emptyjob.png", dir_path=args.plotspath,
+                             title="Correlation between variables - Empty Loop Job",
+                             to_save=True)
+            tam.join_plot(df=df_empty, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
+                          title="Correlation between Parameter and number of Context Switches - Empty Loop Job",
+                          file_name="join_parameter_schedswitches_emptyjob.png", to_save=True)
+            tam.join_plot(df=df_empty, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
+                          title="Correlation between Parameter and number of Migrations - Empty Loop Job",
+                          file_name="join_parameter_migrations_emptyjob.png", to_save=True)
+            tam.join_plot(df=df_empty, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
+                          title="Correlation between Parameter and Effective CPU Time - Empty Loop Job",
+                          file_name="join_parameter_ect_emptyjob.png", to_save=True)
+        else:
+            print("\n\tinsufficient number of records regarding Empty Loop Job for useful plots, skipping ...")
+
+        if len(df_variable) >= 20:
+            tam.heatmap_plot(df=df_variable, file_name="hmap_variablejob.png", dir_path=args.plotspath,
+                             title="Correlation between variables - Variables Exchanging Job",
+                             to_save=True)
+            tam.join_plot(df=df_variable, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
+                          title="Correlation between Parameter and number of Context Switches - Variable Exchanging Job",
+                          file_name="join_parameter_schedswitches_variablejob.png", to_save=True)
+            tam.join_plot(df=df_variable, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
+                          title="Correlation between Parameter and number of Migrations - Variables Exchaging Job",
+                          file_name="join_parameter_migrations_variablejob.png", to_save=True)
+            tam.join_plot(df=df_variable, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
+                          title="Correlation between Parameter and Effective CPU Time - Variables Exchanging Job",
+                          file_name="join_parameter_ect_variablejob.png", to_save=True)
+        else:
+            print("\n\tinsufficient number of records regarding Variable Exchanging Job for useful plots, skipping ...")
+
+        if len(df_list) >= 20:
+            tam.heatmap_plot(df=df_list, file_name="hmap_listjob.png", dir_path=args.plotspath,
+                             title="Correlation between variables - List Ordering Job",
+                             to_save=True)
+            tam.join_plot(df=df_list, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
+                          title="Correlation between Parameter and number of Context Switches - List Ordering Job",
+                          file_name="join_parameter_schedswitches_listjob.png", to_save=True)
+            tam.join_plot(df=df_list, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
+                          title="Correlation between Parameter and number of Migrations - List Ordering Job",
+                          file_name="join_parameter_migrations_listjob.png", to_save=True)
+            tam.join_plot(df=df_list, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
+                          title="Correlation between Parameter and Effective CPU Time - List Ordering Job",
+                          file_name="join_parameter_ect_listjob.png", to_save=True)
+        else:
+            print("\n\tinsufficient number of records regarding List Ordering Job for useful plots, skipping ...")
+        print("DONE")
+    print("*** All done. Terminating.")
 
 
 if __name__ == "__main__":
