@@ -4,10 +4,10 @@ EVENT_TRACING_H = event_tracing_library/include/*.h
 LIST_H = event_tracing_library/src/list.h
 COMMON_DEPS = Makefile
 
+app: event_tracing_library/bin/test_app
+
 samplerun: app
 	event_tracing_library/bin/sampling.sh
-
-app: event_tracing_library/bin/test_app
 
 event_tracing_library/bin/test_app: event_tracing_library/build/test_app.o event_tracing_library/build/event_tracing.o event_tracing_library/build/list.o | event_tracing_library/bin
 	$(CC) -o event_tracing_library/bin/test_app event_tracing_library/build/event_tracing.o event_tracing_library/build/list.o event_tracing_library/build/test_app.o

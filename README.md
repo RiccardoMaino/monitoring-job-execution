@@ -55,10 +55,11 @@ There are two requirements to satisfy:
     - **pandas**: you can install it by running `pip install pandas`
     - **matplotlib**: you can install it by running `pip install matplotlib`
     - **seaborn**: you can install it by running `pip install seaborn`
+    All the packages could be installed manually one by one or using the *"pydeps"* target of the *"make"* utility to install all them togheter. To do this last thing just run `make pydeps` in the folder cloned *"/monitoring-job-execution"*.
 2. Before running the app, obviously we need some tracing data that must be obtained by using the *"event_tracing"* C library. See the above [section](#event-tracing-c-library) for more details.
 
 ## <u>Execution of the Code</u>
-- **main:** To run the app, first move under the *"/py_analysis_module"* folder by running ```cd py_analysis_module``` command. After that run `python3 main.py` followed by a series of optional command line arguments listed below:
+- **main:** To run the app, first move under the *"/py_analysis_module"* folder by running `cd py_analysis_module` command. After that run `python3 main.py` followed by a series of optional command line arguments listed below:
   1. **--respath RESPATH:**: A string used to set the path where to find the information used to create (or to update) the dataset containing records regarding job execution details. (default: ../event_tracing_library/results)
   2. **--csvpath CSVPATH:**: A string used to set the path to a file where to store (or to find) the newly (or the previously) created dataset. (default: dataset.csv)
   3. **--plotspath PLOTSPATH**: A string used to set the path where to store plots regarding the dataset data. (default: plots)
@@ -66,5 +67,6 @@ There are two requirements to satisfy:
   5. **--makeplots**: A flag which if specified allows to create useful plots for the analysis of records contained in the dataset created (or updated). (default: False)
   6. **--delcsv**: A flag which if specified allows to delete the dataset previously created. (default: False)
   7. **--delplots**: A flag which if specified allows to delete the plots, related to the dataset, previously created. (default: False)
+- **make pyrun** Another way to run the app using the default command line arguments is bu using the *"pyrun"* target of the *"make"* utility. To do this last thing just run `make pyrun` in the folder cloned *"/monitoring-job-execution"*.
 ## <u>Output</u>
 After running the code, a dataset will be created (or updated) in the path specified by the commands line arguments with **--csvpath** option. The data used to create the dataset is taken from the folder used with the *“event_tracing”* C library to save tracing data results, the default one is *"../event_tracing_library/results"*. In addition, several plots useful for analyzing the data contained in the dataset will be generated if the flag **--makeplots** is specified. These plots could be found within the folder specified by the command line arguments with **--plotspath** option, the default one is *"/plots"*.
