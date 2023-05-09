@@ -123,6 +123,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       }
       break;
     case 'j':
+      arguments->jobs = strtol(arg, &end_ptr, 10);
+      if(errno != 0 || end_ptr == optarg || *end_ptr != '\0'){
+        argp_error(state, "Error converting to integer the argument for '--jobs' option");
+      }
       if(arguments->jobs < 0){
         argp_error(state, "Invalid argument for '--njobs' option");
       }

@@ -424,7 +424,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
 
   //Verify that the path provided by the user actually exists, if not creates it
   if(access(dir_path, F_OK) == -1) {
-    if(mkdir(dir_path, 0775) == -1){
+    if(mkdir(dir_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -441,7 +441,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
   }
   sprintf(dir_file_path, "%s/%s", dir_path, identifier);
   if(access(dir_file_path, F_OK) == -1) {
-    if(mkdir(dir_file_path, 0775) == -1){
+    if(mkdir(dir_file_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_file_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -457,7 +457,7 @@ void log_execution_info(const char* dir_path, const char* identifier, void* info
   }
   sprintf(file_path, "%s/exec.txt", dir_file_path);
 
-  fd = open(file_path, O_WRONLY | O_CREAT | O_APPEND, 0775);
+  fd = open(file_path, O_WRONLY | O_CREAT | O_APPEND, 0777);
   if(fd == -1){
     fprintf(stderr, "log_execution_info: error opening \"%s\" file. Aborting ...\n", file_path);
     PRINT_ERROR;
@@ -517,7 +517,7 @@ void log_trace(const char* dir_path, char* identifier, short mode){
 
   //Verify that the path provided by the user actually exists. If it doesn't exist, create it.
   if(access(dir_path, F_OK) == -1) {
-    if(mkdir(dir_path, 0775) == -1){
+    if(mkdir(dir_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -534,7 +534,7 @@ void log_trace(const char* dir_path, char* identifier, short mode){
   }
   sprintf(dir_file_path, "%s/%s", dir_path, identifier);
   if(access(dir_file_path, F_OK) == -1) {
-    if(mkdir(dir_file_path, 0775) == -1){
+    if(mkdir(dir_file_path, 0777) == -1){
       fprintf(stderr, "log_execution_info: error creating the folder \"%s\". Aborting ...\n", dir_file_path);
       PRINT_ERROR;
       exit(EXIT_FAILURE);
@@ -550,7 +550,7 @@ void log_trace(const char* dir_path, char* identifier, short mode){
   }
   sprintf(file_path, "%s/trace.txt", dir_file_path);
 
-  fd_write = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0775);
+  fd_write = open(file_path, O_WRONLY | O_CREAT | O_TRUNC, 0777);
   if(fd_write == -1){
     fprintf(stderr, "log_trace: error opening \"%s\" file. Aborting ...\n", file_path);
     PRINT_ERROR;
