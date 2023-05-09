@@ -100,7 +100,7 @@ def main():
                           title="Correlation between Parameter and Effective CPU Time - Empty Loop Job",
                           file_name="join_parameter_ect_emptyjob.png", to_save=True)
         else:
-            print("\n\tinsufficient number of records regarding Empty Loop Job for useful plots, skipping ...")
+            print("\n\tinsufficient number of records for Empty Loop Job, skipping ...")
 
         if len(df_variable) >= 20:
             tam.heatmap_plot(df=df_variable, file_name="hmap_variablejob.png", dir_path=args.plotspath,
@@ -116,7 +116,7 @@ def main():
                           title="Correlation between Parameter and Effective CPU Time - Variables Exchanging Job",
                           file_name="join_parameter_ect_variablejob.png", to_save=True)
         else:
-            print("\n\tinsufficient number of records regarding Variable Exchanging Job for useful plots, skipping ...")
+            print("\n\tinsufficient number of records for Variable Exchanging Job, skipping ...")
 
         if len(df_list) >= 20:
             tam.heatmap_plot(df=df_list, file_name="hmap_listjob.png", dir_path=args.plotspath,
@@ -132,7 +132,7 @@ def main():
                           title="Correlation between Parameter and Effective CPU Time - List Ordering Job",
                           file_name="join_parameter_ect_listjob.png", to_save=True)
         else:
-            print("\n\tinsufficient number of records regarding List Ordering Job for useful plots, skipping ...")
+            print("\n\tinsufficient number of records for List Ordering Job, skipping ...")
         print("DONE")
     print("*** All done. Terminating.")
 

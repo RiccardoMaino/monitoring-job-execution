@@ -194,7 +194,7 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                                         row["id"] = dir_name
                                     df.loc[len(df)] = row
                             elif not is_default_dataframe:
-                                print(f"update_data: error, you must provide the 'execution_data' parameter since the DataFrame columns are not the default ones.")
+                                print(f"Tracing Analysis Module - update_data: error, you must provide the 'execution_data' parameter since the DataFrame columns are not the default ones.")
                                 exit(1)
                             else:
                                 for execution_line in execution_file:
@@ -214,16 +214,18 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                                 if analysis_function is not None:
                                     analyze_trace(df=df, identifier=dir_name, trace_file=trace_file, process_name=process_name, analysis_function=analysis_function)
                                 else:
-                                    print(f"update_data: error, you must provide the 'analyze_function' parameter since the DataFrame columns are not the default ones.")
+                                    print(f"Tracing Analysis Module - update_data: error, you must provide the "
+                                          f"'analyze_function' parameter since the DataFrame columns are not the "
+                                          f"default ones.")
                                     exit(1)
                 except FileNotFoundError as e:
-                    print(f"update_data: warning, file \"{e.filename}\" not found. Skipping ...")
+                    print(f"Tracing Analysis Module - update_data: warning, file \"{e.filename}\" not found. Skipping ...")
                 except PermissionError as e:
-                    print(f"update_data: warning, permission denied to open the following file \"{e.filename}\". Skipping ...")
+                    print(f"Tracing Analysis Module - update_data: warning, permission denied to open the following file \"{e.filename}\". Skipping ...")
                 except IOError as e:
-                    print(f"update_data: warning, io error, {e.strerror}. Skipping ...")
+                    print(f"Tracing Analysis Module - update_data: warning, io error, {e.strerror}. Skipping ...")
     else:
-        print(f"update_data: error, directory \"{dir_result_path}\" not found.")
+        print(f"Tracing Analysis Module - update_data: error, directory \"{dir_result_path}\" not found.")
         exit(1)
 
 
