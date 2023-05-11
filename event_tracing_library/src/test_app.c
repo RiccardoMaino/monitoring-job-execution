@@ -165,12 +165,13 @@ void do_work_exchanging(void* param);
 void do_work_ordering(void* param);
 
 int main(int argc, char *argv[]){
-  struct arguments arguments;
-  int pid;                      //It is the PID of the process
-  void (*do_work_ptr)(void *);  //It is a pointer to the job to execute based on the mode selected
-  struct timespec tp;           //It is a structure needed by the nanosleep to specify the number of sec and nsec to wait
-  exec_info* execution_info;    //It is a pointer to a structure that contains execution information
+  struct arguments arguments;   // A structure used to store the command line arguments
+  int pid;                      // The PID of the process
+  void (*do_work_ptr)(void *);  // A pointer to the job to execute based on the mode selected
+  struct timespec tp;           // A structure needed by the nanosleep to specify the number of sec and nsec to wait
+  exec_info* execution_info;    // A pointer to a structure that contains execution information
   
+  // Default values of command line arguments
   arguments.param = DEFAULT_PARAMETER;
   arguments.mode = DEFAULT_MODE;
   arguments.policy = DEFAULT_POLICY;
@@ -208,10 +209,12 @@ int main(int argc, char *argv[]){
 
   printf("*** Execution ID: %s\n", execution_info->id);
 
-  // Setting the scheduling policy and priority
-  set_scheduler_policy(0, arguments.policy, arguments.priority, execution_info);
   // Enabling the tracing infrastructure 
   ENABLE_TRACING;
+
+  // Setting the scheduling policy and priority
+  set_scheduler_policy(0, arguments.policy, arguments.priority, execution_info);
+
   // Setting up the filter of the sched_switch event
   set_event_filter(pid, E_SCHED_SWITCH, SET);
 
