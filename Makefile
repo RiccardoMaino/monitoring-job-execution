@@ -32,7 +32,7 @@ clean:
 
 # Analysis Python Module
 pyrun:
-	python3 py_analysis_module/main.py --makeplots
+	python3 py_analysis_module/app.py --makeplots
 
 pydeps:
 	pip install numpy

@@ -59,7 +59,7 @@ There are two requirements to satisfy:
 2. Before running the app, obviously we need some tracing data that must be obtained by using the *"event_tracing"* C library. See the above [section](#event-tracing-c-library) for more details.
 
 ## <u>Execution of the Code</u>
-- **main:** To run the app, first move under the *"/py_analysis_module"* folder by running `cd py_analysis_module` command. After that run `python3 main.py` followed by a series of optional command line arguments listed below:
+- **app.py:** To run the app, first move under the *"/py_analysis_module"* folder by running `cd py_analysis_module` command. After that run `python3 main.py` followed by a series of optional command line arguments listed below:
   1. **--respath RESPATH:**: A string used to set the path where to find the information used to create (or to update) the dataset containing records regarding job execution details. (default: ../event_tracing_library/results)
   2. **--csvpath CSVPATH:**: A string used to set the path to a file where to store (or to find) the newly (or the previously) created dataset. (default: dataset.csv)
   3. **--plotspath PLOTSPATH**: A string used to set the path where to store plots regarding the dataset data. (default: plots)
