@@ -121,7 +121,7 @@ def save_dataframe(df: pd.DataFrame, path: str, drop_na: bool = True, sort_by: l
         df["id"] = df["id"].astype(str)
     if "num_sched_switches" in df.columns:
         df["num_sched_switches"] = df["num_sched_switches"].astype(int)
-    if "num_migrations":
+    if "num_migrations" in df.columns:
         df["num_migrations"] = df["num_migrations"].astype(int)
     df.to_csv(path, index=False)
 
@@ -194,7 +194,7 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                                         row["id"] = dir_name
                                     df.loc[len(df)] = row
                             elif not is_default_dataframe:
-                                print(f"\nupdate_data: error, you must provide the 'execution_data' parameter since the DataFrame columns are not the default ones. Terminating.", end='')
+                                print(f"\n\tupdate_data: error, you must provide the 'execution_data' parameter since the DataFrame columns are not the default ones. Terminating.")
                                 exit(1)
                             else:
                                 for execution_line in execution_file:
@@ -214,7 +214,7 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                                 if analysis_function is not None:
                                     analyze_trace(df=df, identifier=dir_name, trace_file=trace_file, process_name=process_name, analysis_function=analysis_function)
                                 else:
-                                    print(f"\nupdate_data: error, you must provide the "
+                                    print(f"\n\tupdate_data: error, you must provide the "
                                           f"'analyze_function' parameter since the DataFrame columns are not the "
                                           f"default ones. Terminating.")
                                     exit(1)
@@ -225,7 +225,7 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                 except IOError as e:
                     print(f"\n\tupdate_data: warning, io error, {e.strerror}. Skipping ...", end='')
     else:
-        print(f"\nupdate_data: error, directory \"{dir_result_path}\" not found. Terminating.")
+        print(f"\n\tupdate_data: error, directory \"{dir_result_path}\" not found. Terminating.")
         exit(1)
 
 
@@ -279,9 +279,9 @@ def analyze_trace(df: pd.DataFrame, identifier: str, trace_file: TextIO, process
         dc.getcontext().prec = 10
         if re_line_group_matcher is None:
             re_line_group_matcher = LINE_GROUP_MATCHER
-            re_traceline_line.replace("test_app", process_name)
         if re_job_group_matcher is None:
             re_job_group_matcher = JOB_GROUP_MATCHER
+            re_traceline_job = re.sub(r'test_app', process_name, re_traceline_job)
 
         previous_timestamp: dc.Decimal = dc.Decimal("NaN")
         previous_core: str = ""
@@ -311,9 +311,9 @@ def analyze_trace(df: pd.DataFrame, identifier: str, trace_file: TextIO, process
                     effective_cpu_time = total_cpu_time if effective_cpu_time == dc.Decimal('0.0') else effective_cpu_time + (end_timestamp - previous_timestamp)
                     condition = (df["id"] == identifier) & (df["job_number"] == job_number)
                     new_values = {
-                        "effective_cpu_time": effective_cpu_time.quantize(dc.Decimal('0.000001')),
-                        "total_cpu_time": total_cpu_time.quantize(dc.Decimal('0.000001')),
-                        "diff_cpu_time": total_cpu_time.quantize(dc.Decimal('0.000001')) - effective_cpu_time.quantize(dc.Decimal('0.000001')),
+                        "effective_cpu_time": float(effective_cpu_time.quantize(dc.Decimal('0.000001'))),
+                        "total_cpu_time": float(total_cpu_time.quantize(dc.Decimal('0.000001'))),
+                        "diff_cpu_time": float(total_cpu_time.quantize(dc.Decimal('0.000001')) - effective_cpu_time.quantize(dc.Decimal('0.000001'))),
                         "num_sched_switches": sched_switches_count,
                         "num_migrations": migrations_count
                     }
@@ -484,7 +484,8 @@ def save_show_plot(file_name: str, dir_path: str, to_save: bool):
             file_name = "plot_" + timestamp
         file_path = os.path.join(dir_path, file_name)
         plt.savefig(file_path)
-    plt.show()
+    else:
+        plt.show()
 
 
 def set_sns_config(dpi: int = 200, figsize: tuple[int, int] = (8, 6), font_scale: float = 1.0):

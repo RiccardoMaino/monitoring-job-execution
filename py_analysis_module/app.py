@@ -1,4 +1,5 @@
 import argparse
+import re
 import os
 import shutil
 import tracing_analysis_module as tam
@@ -55,7 +56,6 @@ def main():
                              "previously created. (default: False)",
                         required=False)
     args = parser.parse_args()
-
     if args.delcsv and os.path.isfile(args.csvpath):
         print("*** Deleting the dataset previously created ...")
         os.remove(args.csvpath)
@@ -100,7 +100,7 @@ def main():
                           title="Correlation between Parameter and Effective CPU Time - Empty Loop Job",
                           file_name="join_parameter_ect_emptyjob.png", to_save=True)
         else:
-            print("\n\tinsufficient number of records for Empty Loop Job, skipping ...")
+            print("\n\tinsufficient number of records for Empty Loop Job, skipping ...", end='')
 
         if len(df_variable) >= 20:
             tam.heatmap_plot(df=df_variable, file_name="hmap_variablejob.png", dir_path=args.plotspath,
@@ -116,7 +116,7 @@ def main():
                           title="Correlation between Parameter and Effective CPU Time - Variables Exchanging Job",
                           file_name="join_parameter_ect_variablejob.png", to_save=True)
         else:
-            print("\n\tinsufficient number of records for Variable Exchanging Job, skipping ...")
+            print("\n\tinsufficient number of records for Variable Exchanging Job, skipping ...", end='')
 
         if len(df_list) >= 20:
             tam.heatmap_plot(df=df_list, file_name="hmap_listjob.png", dir_path=args.plotspath,
@@ -132,7 +132,7 @@ def main():
                           title="Correlation between Parameter and Effective CPU Time - List Ordering Job",
                           file_name="join_parameter_ect_listjob.png", to_save=True)
         else:
-            print("\n\tinsufficient number of records for List Ordering Job, skipping ...")
+            print("\n\tinsufficient number of records for List Ordering Job, skipping ...", end='')
         print("DONE")
     print("*** All done. Terminating.")
 
