@@ -5,7 +5,7 @@ import decimal as dc
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
-from typing import Callable, Any, TextIO
+from typing import Callable, Any, TextIO, List, Tuple
 from datetime import datetime
 
 
@@ -63,7 +63,7 @@ LINE_GROUP_MATCHER = {
 COLUMNS = ["id", "effective_cpu_time", "total_cpu_time", "diff_cpu_time", "num_sched_switches", "num_migrations", "parameter", "job_number", "mode", "sched_policy", "sched_priority"]
 
 
-def load_dataframe(df_path: str, columns: list[str] = None) -> pd.DataFrame:
+def load_dataframe(df_path: str, columns: List[str] = None) -> pd.DataFrame:
     """
     Retrieves a pandas DataFrame from a file path. If the DataFrame does not exist, it creates a new one
     with the specified columns. If there isn't a column with the name 'id', it will add that cause this column is used
@@ -73,7 +73,7 @@ def load_dataframe(df_path: str, columns: list[str] = None) -> pd.DataFrame:
 
     Parameters:
         df_path (str): A string representing the file path to the pandas DataFrame.
-        columns (list[str], optional): A list of string representing the columns of the pandas DataFrame. Default is None.
+        columns (List[str], optional): A list of string representing the columns of the pandas DataFrame. Default is None.
 
     Returns:
         pandas.DataFrame: The retrieved or newly created DataFrame.
@@ -96,7 +96,7 @@ def load_dataframe(df_path: str, columns: list[str] = None) -> pd.DataFrame:
     return df
 
 
-def save_dataframe(df: pd.DataFrame, path: str, drop_na: bool = True, sort_by: list[str] = None, ascending: bool = True):
+def save_dataframe(df: pd.DataFrame, path: str, drop_na: bool = True, sort_by: List[str] = None, ascending: bool = True):
     """
     Saves a given pandas DataFrame to a specified file path after performing some preprocessing on the DataFrame.
     The preprocessing includes the following operations: sorting of the DataFrame entries based on the 'sort_by' parameter,
@@ -106,7 +106,7 @@ def save_dataframe(df: pd.DataFrame, path: str, drop_na: bool = True, sort_by: l
         df (pandas.DataFrame): The pandas DataFrame to save.
         path (str): The file path where the DataFrame will be saved.
         drop_na (bool): A boolean value used to specify if it is necessary to drop records containing NaNs from the DataFrame.
-        sort_by (list[str], optional): A list of string used to sort values in the DataFrame before saving it to a csv file.
+        sort_by (List[str], optional): A list of string used to sort values in the DataFrame before saving it to a csv file.
         ascending (bool, optional): A boolean value representing if the sorting should be performed in ascending order (True)
         or descending order (False).
 
@@ -126,7 +126,7 @@ def save_dataframe(df: pd.DataFrame, path: str, drop_na: bool = True, sort_by: l
     df.to_csv(path, index=False)
 
 
-def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace_filename: str = "trace.txt", execution_filename: str = "exec.txt", execution_data: list[str] = None,  analysis_function: Callable[[pd.DataFrame, str, TextIO, str], Any] = None):
+def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace_filename: str = "trace.txt", execution_filename: str = "exec.txt", execution_data: List[str] = None,  analysis_function: Callable[[pd.DataFrame, str, TextIO, str], Any] = None):
     """
     Updates a given pandas DataFrame with new data records that haven't yet been recorded in the DataFrame, found in the
     directory specified by the 'dir_result_path' parameter. The hierarchy of the 'dir_result_path' directory must be of
@@ -153,7 +153,7 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
         execution_filename (str, optional): The name of the file that contains all the job details related to the kernel
         trace file, line by line for each job that occurred during the execution. These job details are some values that
         will be stored in the corresponding columns of the new DataFrame records. Default is "exec.txt".
-        execution_data (list[str], optional): A list of strings containing the names, in the corresponding order, of the
+        execution_data (List[str], optional): A list of strings containing the names, in the corresponding order, of the
         columns in the DataFrame that refer to a line in the 'execution_filename' file. For example assume we have a DataFrame
         with the columns ["A", "B", "C", "D"] and the 'execution_filename' contains lines like this one <abc, xyz, 1>.
         Assume that the value 'abc' correspond to the C column of the DataFrame, the value '1' correspond to the A column
@@ -194,7 +194,8 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                                         row["id"] = dir_name
                                     df.loc[len(df)] = row
                             elif not is_default_dataframe:
-                                print(f"\n\tupdate_data: error, you must provide the 'execution_data' parameter since the DataFrame columns are not the default ones. Terminating.")
+                                print(f"\nError: update_data error, you must provide the 'execution_data' parameter "
+                                      f"since the DataFrame columns are not the default ones. Terminating.")
                                 exit(1)
                             else:
                                 for execution_line in execution_file:
@@ -214,22 +215,22 @@ def update_data(df: pd.DataFrame, dir_result_path: str, process_name: str, trace
                                 if analysis_function is not None:
                                     analyze_trace(df=df, identifier=dir_name, trace_file=trace_file, process_name=process_name, analysis_function=analysis_function)
                                 else:
-                                    print(f"\n\tupdate_data: error, you must provide the "
+                                    print(f"\nError: update_data error, you must provide the "
                                           f"'analyze_function' parameter since the DataFrame columns are not the "
                                           f"default ones. Terminating.")
                                     exit(1)
                 except FileNotFoundError as e:
-                    print(f"\n\tupdate_data: warning, file \"{e.filename}\" not found. Skipping ...", end='')
+                    print(f"\nWarning: update_data warning, file \"{e.filename}\" not found. Skipping ...", end='')
                 except PermissionError as e:
-                    print(f"\n\tupdate_data: warning, permission denied to open the following file \"{e.filename}\". Skipping ...", end='')
+                    print(f"\nWarning: update_data warning, permission denied to open the following file \"{e.filename}\". Skipping ...", end='')
                 except IOError as e:
-                    print(f"\n\tupdate_data: warning, io error, {e.strerror}. Skipping ...", end='')
+                    print(f"\nWarning: update_data warning, io problem, {e.strerror}. Skipping ...", end='')
     else:
-        print(f"\n\tupdate_data: error, directory \"{dir_result_path}\" not found. Terminating.")
+        print(f"\nError: update_data error, directory \"{dir_result_path}\" not found. Terminating.")
         exit(1)
 
 
-def analyze_trace(df: pd.DataFrame, identifier: str, trace_file: TextIO, process_name: str, states: tuple[str, str] = ("start", "end"), re_traceline_job: str = TRACE_JOB_LINE_PATTERN, re_traceline_line: str = TRACE_LINE_PATTERN, re_job_group_matcher: dict = None, re_line_group_matcher: dict = None, analysis_function: Callable[[pd.DataFrame, str, TextIO, str], Any] = None):
+def analyze_trace(df: pd.DataFrame, identifier: str, trace_file: TextIO, process_name: str, states: Tuple[str, str] = ("start", "end"), re_traceline_job: str = TRACE_JOB_LINE_PATTERN, re_traceline_line: str = TRACE_LINE_PATTERN, re_job_group_matcher: dict = None, re_line_group_matcher: dict = None, analysis_function: Callable[[pd.DataFrame, str, TextIO, str], Any] = None):
     """
     Calculates and updates job records of a given pandas DataFrame with execution times and scheduling information
     extracted from the kernel trace file associated to the program execution identified by the 'identifier' parameter.
@@ -249,7 +250,7 @@ def analyze_trace(df: pd.DataFrame, identifier: str, trace_file: TextIO, process
         information. It must be the same as the name of the directory in which the 'trace_file' is contained.
         trace_file (TextIO): The kernel trace file to analyze.
         process_name (str): The name of the process to analyze within the kernel trace.
-        states (tuple[str, str], optional): A tuple indicating the strings used to mark the start and the end of a job
+        states (Tuple[str, str], optional): A tuple indicating the strings used to mark the start and the end of a job
         in the kernel trace. Default is ("start", "end").
         re_traceline_job (str, optional): An optioanl regular expression used to match kernel trace lines which contains
         the reference to the start or the end of job that have to be recognized. Default is None.
@@ -386,6 +387,7 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
         If no optional parameters are provided, the function will use the default values defined internally in the
         module.
     """
+    plt.subplots(figsize=(15, 10))
     corr_matrix = df.corr(numeric_only=True)
     sns.heatmap(data=corr_matrix, annot=True, cmap=color_palette)
     if title is not None:
@@ -395,7 +397,7 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
     save_show_plot(file_name, dir_path, to_save)
 
 
-def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, dir_path: str = None, title: str = None, to_save: bool = False):
+def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None,to_save: bool = False):
     """
     Creates and optionally saves a joinplot using the 'x_var' and 'y_var' present in the DataFrame specified by the 'df'
     parameter.
@@ -408,6 +410,8 @@ def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, d
         dir_path (str, optional): The path to a directory where to save the joinplot. If this parameter isn't provided
         the joinplot will be saved in a subfolder of the working directory called 'plots'. Default is None.
         title (str, optional): The title of the plot. Default is None.
+        x_label (str, optional): The label to use along with the x-axis. Default is None.
+        y_label (str, optional): The label to use along with the y-axis. Default is None.
         to_save (bool, optional): A boolean value used to determine whether to save the plot or not. If set to False,
         the plot will only be showed to the user. Default is False.
 
@@ -419,7 +423,9 @@ def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, d
         module.
     """
     h = sns.jointplot(x=x_var, y=y_var, data=df, kind="reg")
-    h.set_axis_labels(x_var.title(), y_var.title(), fontsize=12)
+    xl = x_var.title() if x_label is None else x_label
+    yl = y_var.title() if y_label is None else y_label
+    h.set_axis_labels(xl, yl, fontsize=12)
     plt.subplots_adjust(top=0.9)
     if title is not None:
         plt.suptitle(title, fontsize=12)
@@ -428,7 +434,7 @@ def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, d
     save_show_plot(file_name, dir_path, to_save)
 
 
-def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_path: str = None, title: str = None, to_save: bool = False):
+def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, to_save: bool = False):
     """
     Creates and optionally saves a distribution plot of the 'x_var' present in the DataFrame specified by the 'df' parameter.
 
@@ -439,6 +445,7 @@ def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_pat
         dir_path (str, optional): The path to a directory where to save the distribution plot. If this parameter isn't
         provided the distribution plot will be saved in a subfolder of the working directory called 'plots'. Default is None.
         title (str, optional): The title of the plot. Default is None.
+        x_label (str, optional): The label to use along with the x-axis. Default is None.
         to_save (bool, optional): A boolean value used to determine whether to save the plot or not. If set to False,
         the plot will only be showed to the user. Default is False.
 
@@ -454,7 +461,8 @@ def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_pat
         plt.title(title)
     else:
         plt.title(f"Distribution of the {var.title()}")
-    plt.xlabel(var.title())
+    xl = var.title() if x_label is None else x_label
+    plt.xlabel(xl)
     save_show_plot(file_name, dir_path, to_save)
 
 
@@ -488,14 +496,14 @@ def save_show_plot(file_name: str, dir_path: str, to_save: bool):
         plt.show()
 
 
-def set_sns_config(dpi: int = 200, figsize: tuple[int, int] = (8, 6), font_scale: float = 1.0):
+def set_sns_config(dpi: int = 200, figsize: Tuple[int, int] = (8, 6), font_scale: float = 1.0):
     """
     Sets some options values used in the Seaborn package regarding the plot creation. More specifically it allows to set
     the dpi, the font size and the size of the figure of a plot.
 
     Parameters:
         dpi (int, optional): The dpi of the figure used to display a plot. Default is 200.
-        figsize (tuple[int,int]): A tuple that specify the width and the height of a figure used to display a plot. Default is (8, 6).
+        figsize (Tuple[int,int]): A tuple that specify the width and the height of a figure used to display a plot. Default is (8, 6).
         font_scale (float): The size of text within the plot. Default is 1.0.
 
     Returns:
