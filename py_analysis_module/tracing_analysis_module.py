@@ -388,7 +388,10 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
         module.
     """
     plt.subplots(figsize=(15, 10))
-    corr_matrix = df.corr(numeric_only=True)
+    corr_matrix = df.corr(numeric_only=True).abs()
+    if "sched_priority" in df.columns:
+        corr_matrix.drop('sched_priority', axis=0, inplace=True)
+        corr_matrix.drop('sched_priority', axis=1, inplace=True)
     sns.heatmap(data=corr_matrix, annot=True, cmap=color_palette)
     if title is not None:
         plt.title(title)

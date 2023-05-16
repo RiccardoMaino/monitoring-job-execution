@@ -18,22 +18,22 @@ def main():
                                      formatter_class=CustomFormatter)
     parser.add_argument("-r", "--respath",
                         type=str,
-                        default="../event_tracing_library/results",
+                        default="../results",
                         help="a string used to set the path where to find the information used to create the dataset "
                              "containing records regarding job execution details. (default: "
-                             "../event_tracing_library/results)",
+                             "../results)",
                         required=False)
     parser.add_argument("-c", "--csvpath",
                         type=str,
-                        default="dataset.csv",
+                        default="../dataset.csv",
                         help="a string used to set the path to a file where to store (or to find) the newly (or the "
-                             "previously) created dataset. (default: dataset.csv)",
+                             "previously) created dataset. (default: ../dataset.csv)",
                         required=False)
     parser.add_argument("-p", "--plotspath",
                         type=str,
-                        default="plots",
+                        default="../plots",
                         help="a string used to set the path where to store plots regarding the dataset data. ("
-                             "default: plots)",
+                             "default: ../plots)",
                         required=False)
     parser.add_argument("-n", "--name",
                         type=str,

@@ -35,9 +35,9 @@ cleanall:
 
 # Event Tracing Library
 run: app
-	sudo event_tracing_library/bin/test_app --param 10000000 --mode 1 --policy SCHED_FIFO --priority 99 --nowait --respath results
-	sudo event_tracing_library/bin/test_app --param 1000000 --mode 2 --policy SCHED_FIFO --priority 99 --nowait --respath results
-	sudo event_tracing_library/bin/test_app --param 100000 --mode 3 --policy SCHED_FIFO --priority 99 --nowait --respath results
+	sudo event_tracing_library/bin/test_app --param 10000000 --increase 1000000 --mode 1 --policy SCHED_OTHER --priority 0 --nowait --respath results
+	sudo event_tracing_library/bin/test_app --param 1000000 --increase 100000 --mode 2 --policy SCHED_OTHER --priority 0 --nowait --respath results
+	sudo event_tracing_library/bin/test_app --param 100000 --increase 10000 --mode 3 --policy SCHED_OTHER --priority 0 --nowait --respath results
 
 app: event_tracing_library/bin/test_app
 
@@ -71,10 +71,7 @@ clean:
 
 # Analysis Python Module
 pyrun:
-	python3 py_analysis_module/app.py --respath results --csvpath dataset.csv --p plots --makeplots
+	python3 py_analysis_module/app.py --respath results --csvpath dataset.csv --plotspath plots --makeplots
 
 pydeps:
-	pip install numpy
-	pip install pandas
-	pip install matplotlib
-	pip install seaborn
+	pip install --upgrade numpy pandas matplotlib seaborn
