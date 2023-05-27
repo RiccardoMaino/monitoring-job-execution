@@ -1,7 +1,7 @@
 ## <u>Index</u>
 - [Quick Start](#quick-start)
 - [Event Tracing C Library](#event-tracing-c-library)
-- [Analysis Module Python](#analysis-module-python)
+- [Tracing Analysis Python Module](#tracing-analysis-python-module)
 
 ------
 # <u>Quick Start</u>
@@ -39,7 +39,7 @@ After the execution of the code, the path specified by the command line argument
 
 
 
-# <u>Analysis Module Python</u> 
+# <u>Tracing Analysis Python Module</u> 
 ## <u>Requirements</u>
 There are two requirements to satisfy: 
 1. To make this module work correctly, it is necessary to install some packages if they are not already installed. To do this, we can take advantage of the Python *"pip"* utility.
@@ -60,6 +60,7 @@ There are two requirements to satisfy:
     - **pandas >= 3.7.1**: you can install (or upgrade) it by running `pip install --upgrade pandas`
     - **matplotlib >= 1.24.3**: you can install (or upgrade) it by running `pip install --upgrade matplotlib`
     - **seaborn >= 0.12.2**: you can install (or upgrade) it by running `pip install --upgrade seaborn`
+
     All the packages could be installed manually one by one or using the *"pydeps"* target of the *"make"* utility to install all them togheter. To do this last thing just run `make pydeps` command in the folder cloned *"monitoring-job-execution"*.
 2. Before running the app, obviously we need some tracing data that must be obtained by using the *"event_tracing"* C library. See the above [section](#event-tracing-c-library) for more details.
 
