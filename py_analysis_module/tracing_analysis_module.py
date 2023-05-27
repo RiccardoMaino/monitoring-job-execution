@@ -403,7 +403,8 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
 def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None,to_save: bool = False):
     """
     Creates and optionally saves a joinplot using the 'x_var' and 'y_var' present in the DataFrame specified by the 'df'
-    parameter.
+    parameter. A joinplot is a useful graph for seeing the trend of two variables and for visualizing how their
+    correlation changes.
 
     Parameters:
         df (pandas.DataFrame): The DataFrame that contains data to be plotted.
@@ -440,6 +441,8 @@ def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, d
 def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, to_save: bool = False):
     """
     Creates and optionally saves a distribution plot of the 'x_var' present in the DataFrame specified by the 'df' parameter.
+    The distribution plot is a graph that shows the distribution of a variable, which is useful for assuming some attributes
+    of the variable such as the mean, median, variance and standard deviation.
 
     Parameters:
         df (pandas.DataFrame): The DataFrame that contains data to be plotted.
