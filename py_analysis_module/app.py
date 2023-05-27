@@ -1,8 +1,7 @@
 import argparse
-import re
 import os
 import shutil
-import tracing_analysis_module as tam
+import tracing_analysis as ta
 
 
 class CustomFormatter(argparse.HelpFormatter):
@@ -65,13 +64,13 @@ def main():
         shutil.rmtree(args.plotspath, ignore_errors=True)
 
     print("*** Loading the dataset ...", end='')
-    df = tam.load_dataframe(args.csvpath)
+    df = ta.load_dataframe(args.csvpath)
     print("DONE")
     print("*** Updating the dataset ...", end='')
-    tam.update_data(df=df, dir_result_path=args.respath, process_name=args.name)
+    ta.update_data(df=df, dir_result_path=args.respath, process_name=args.name)
     print("DONE")
     print("*** Saving the dataset ...", end='')
-    tam.save_dataframe(df, args.csvpath, sort_by=["mode", "parameter", "job_number"])
+    ta.save_dataframe(df, args.csvpath, sort_by=["mode", "parameter", "job_number"])
     print("DONE")
 
     if args.makeplots:
@@ -86,72 +85,72 @@ def main():
         df_list = df[df["mode"] == "ListOrdering"]
 
         if len(df_empty) >= 10:
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.heatmap_plot(df=df_empty, file_name="hmap_emptyjob.png", dir_path=args.plotspath,
-                             title="Correlation between variables\nEmpty Loop Job",
-                             to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_empty, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
-                          title="Correlation between Parameter and number of Context Switches\nEmpty Loop Job",
-                          file_name="join_parameter_schedswitches_emptyjob.png",
-                          x_label="Parameter", y_label="N° Context Switches",
-                          to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_empty, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
-                          title="Correlation between Parameter and number of Migrations\nEmpty Loop Job",
-                          x_label="Parameter", y_label="N° Migrations",
-                          file_name="join_parameter_migrations_emptyjob.png", to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_empty, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
-                          title="Correlation between Parameter and Effective CPU Time\nEmpty Loop Job",
-                          x_label="Parameter", y_label="Effective CPU Time (msec)",
-                          file_name="join_parameter_ect_emptyjob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.heatmap_plot(df=df_empty, file_name="hmap_emptyjob.png", dir_path=args.plotspath,
+                            title="Correlation between variables\nEmpty Loop Job",
+                            to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_empty, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
+                         title="Correlation between Parameter and number of Context Switches\nEmpty Loop Job",
+                         file_name="join_parameter_schedswitches_emptyjob.png",
+                         x_label="Parameter", y_label="N° Context Switches",
+                         to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_empty, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
+                         title="Correlation between Parameter and number of Migrations\nEmpty Loop Job",
+                         x_label="Parameter", y_label="N° Migrations",
+                         file_name="join_parameter_migrations_emptyjob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_empty, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
+                         title="Correlation between Parameter and Effective CPU Time\nEmpty Loop Job",
+                         x_label="Parameter", y_label="Effective CPU Time (msec)",
+                         file_name="join_parameter_ect_emptyjob.png", to_save=True)
         else:
             print("\n*** Plots Creation: insufficient number of records for Empty Loop Job, skipping ...", end='')
 
         if len(df_variable) >= 10:
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.heatmap_plot(df=df_variable, file_name="hmap_variablejob.png", dir_path=args.plotspath,
-                             title="Correlation between variables\nVariables Exchanging Job",
-                             to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_variable, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
-                          title="Correlation between Parameter and number of Context Switches\nVariable Exchanging Job",
-                          x_label="Parameter", y_label="N° Context Switches",
-                          file_name="join_parameter_schedswitches_variablejob.png", to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_variable, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
-                          title="Correlation between Parameter and number of Migrations\nVariables Exchaging Job",
-                          x_label="Parameter", y_label="N° Migrations",
-                          file_name="join_parameter_migrations_variablejob.png", to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_variable, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
-                          title="Correlation between Parameter and Effective CPU Time\nVariables Exchanging Job",
-                          x_label="Parameter", y_label="Effective CPU Time (msec)",
-                          file_name="join_parameter_ect_variablejob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.heatmap_plot(df=df_variable, file_name="hmap_variablejob.png", dir_path=args.plotspath,
+                            title="Correlation between variables\nVariables Exchanging Job",
+                            to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_variable, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
+                         title="Correlation between Parameter and number of Context Switches\nVariable Exchanging Job",
+                         x_label="Parameter", y_label="N° Context Switches",
+                         file_name="join_parameter_schedswitches_variablejob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_variable, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
+                         title="Correlation between Parameter and number of Migrations\nVariables Exchaging Job",
+                         x_label="Parameter", y_label="N° Migrations",
+                         file_name="join_parameter_migrations_variablejob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_variable, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
+                         title="Correlation between Parameter and Effective CPU Time\nVariables Exchanging Job",
+                         x_label="Parameter", y_label="Effective CPU Time (msec)",
+                         file_name="join_parameter_ect_variablejob.png", to_save=True)
         else:
             print("\n*** Plots Creation: insufficient number of records for Variable Exchanging Job, skipping ...", end='')
 
         if len(df_list) >= 10:
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.heatmap_plot(df=df_list, file_name="hmap_listjob.png", dir_path=args.plotspath,
-                             title="Correlation between variables\nList Ordering Job",
-                             to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_list, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
-                          title="Correlation between Parameter and number of Context Switches\nList Ordering Job",
-                          x_label="Parameter", y_label="N° Context Switches",
-                          file_name="join_parameter_schedswitches_listjob.png", to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_list, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
-                          title="Correlation between Parameter and number of Migrations\nList Ordering Job",
-                          x_label="Parameter", y_label="N° Migrations",
-                          file_name="join_parameter_migrations_listjob.png", to_save=True)
-            tam.set_sns_config(200, (15, 10), 1.0)
-            tam.join_plot(df=df_list, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
-                          title="Correlation between Parameter and Effective CPU Time\nList Ordering Job",
-                          x_label="Parameter", y_label="N° Context Switches",
-                          file_name="join_parameter_ect_listjob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.heatmap_plot(df=df_list, file_name="hmap_listjob.png", dir_path=args.plotspath,
+                            title="Correlation between variables\nList Ordering Job",
+                            to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_list, x_var="parameter", y_var="num_sched_switches", dir_path=args.plotspath,
+                         title="Correlation between Parameter and number of Context Switches\nList Ordering Job",
+                         x_label="Parameter", y_label="N° Context Switches",
+                         file_name="join_parameter_schedswitches_listjob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_list, x_var="parameter", y_var="num_migrations", dir_path=args.plotspath,
+                         title="Correlation between Parameter and number of Migrations\nList Ordering Job",
+                         x_label="Parameter", y_label="N° Migrations",
+                         file_name="join_parameter_migrations_listjob.png", to_save=True)
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.join_plot(df=df_list, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
+                         title="Correlation between Parameter and Effective CPU Time\nList Ordering Job",
+                         x_label="Parameter", y_label="N° Context Switches",
+                         file_name="join_parameter_ect_listjob.png", to_save=True)
         else:
             print("\n*** Plots Creation: insufficient number of records for List Ordering Job, skipping ...", end='')
         print("DONE")
