@@ -169,6 +169,7 @@ static struct argp argp = { options, parse_opt, 0, doc };
 long update_parameter(long parameter);
 long update_parameter_2();
 long update_parameter_3(long parameter, long increase);
+long update_parameter_4(long parameter);
 void do_work(void* param);
 void do_work_exchanging(void* param);
 void do_work_ordering(void* param);
@@ -290,6 +291,13 @@ long update_parameter_2(){
 */
 long update_parameter_3(long parameter, long increase){
   return parameter + increase;
+}
+
+/**
+ * @brief It updates the parameter based on the math function provided
+*/
+long update_parameter_4(long parameter){
+  return parameter*2;
 }
 
 
