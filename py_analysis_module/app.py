@@ -2,6 +2,7 @@ import argparse
 import os
 import shutil
 import tracing_analysis as ta
+import seaborn as sns
 
 
 class CustomFormatter(argparse.HelpFormatter):
@@ -40,6 +41,10 @@ def main():
                         help="a string used to specify the process name of the program traced using the event_tracing "
                              "C library. (default: test_app)",
                         required=False),
+    parser.add_argument("-s", "--savecsv",
+                        action="store_true",
+                        help="a flag which if specified allows to save the updated DataFrame in the path specified by "
+                             "the --csvpath argument (default: False)")
     parser.add_argument("-l", "--makeplots",
                         action="store_true",
                         help="a flag which if specified allows to create useful plots for the analysis of records "
@@ -69,9 +74,11 @@ def main():
     print("*** Updating the dataset ...", end='')
     ta.update_data(df=df, dir_result_path=args.respath, process_name=args.name)
     print("DONE")
-    print("*** Saving the dataset ...", end='')
-    ta.save_dataframe(df, args.csvpath, sort_by=["mode", "parameter", "job_number"])
-    print("DONE")
+
+    if args.savecsv:
+        print("*** Saving the dataset ...", end='')
+        ta.save_dataframe(df, args.csvpath, sort_by=["mode", "parameter", "job_number"])
+        print("DONE")
 
     if args.makeplots:
         print("*** Creating plots for analysis ...", end='')
@@ -105,6 +112,26 @@ def main():
                          title="Correlation between Parameter and Effective CPU Time\nEmpty Loop Job",
                          x_label="Parameter", y_label="Effective CPU Time (msec)",
                          file_name="join_parameter_ect_emptyjob.png", to_save=True)
+
+            ################### TESTING ##############################
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.scatter_plot(df_empty, x_var="parameter", y_var="effective_cpu_time",
+                            hue="sched_policy", style="sched_priority",
+                            dir_path=args.plotspath,
+                            title="Scatterplot between Parameter and Effective CPU Time\nEmpty Loop Job",
+                            x_label="Parameter", y_label="Effective CPU Time (msec)",
+                            file_name="scatter_parameter_ect_emptyjob.png", to_save=True)
+
+            ta.set_sns_config(200, (15, 10), 1.0)
+            ta.grid_plots(df_empty, stats_function=sns.scatterplot,
+                          col="sched_policy",
+                          x_var="parameter", y_var="effective_cpu_time",
+                          hue="sched_priority",
+                          height=7, aspect=0.7,
+                          dir_path=args.plotspath,
+                          title="Grid of Scatterplot between Parameter and Effective CPU Time",
+                          file_name="grid_parameter_ect_emptyjob.png", to_save=True, )
+            ############################################################
         else:
             print("\n*** Plots Creation: insufficient number of records for Empty Loop Job, skipping ...", end='')
 

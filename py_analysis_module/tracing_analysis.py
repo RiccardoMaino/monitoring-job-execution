@@ -387,20 +387,19 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
         If no optional parameters are provided, the function will use the default values defined internally in the
         module.
     """
-    plt.subplots(figsize=(15, 10))
     corr_matrix = df.corr(numeric_only=True).abs()
     if "sched_priority" in df.columns:
         corr_matrix.drop('sched_priority', axis=0, inplace=True)
         corr_matrix.drop('sched_priority', axis=1, inplace=True)
-    sns.heatmap(data=corr_matrix, annot=True, cmap=color_palette)
+    ax = sns.heatmap(data=corr_matrix, annot=True, cmap=color_palette)
     if title is not None:
-        plt.title(title)
+        plt.suptitle(title, fontsize=20)
     else:
-        plt.title("Heatmap of Correlations between variables")
+        plt.suptitle("Heatmap of Correlations between variables", fontsize=20)
     save_show_plot(file_name, dir_path, to_save)
 
 
-def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None,to_save: bool = False):
+def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None, to_save: bool = False):
     """
     Creates and optionally saves a joinplot using the 'x_var' and 'y_var' present in the DataFrame specified by the 'df'
     parameter. A joinplot is a useful graph for seeing the trend of two variables and for visualizing how their
@@ -426,15 +425,15 @@ def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, d
         If no optional parameters are provided, the function will use the default values defined internally in the
         module.
     """
-    h = sns.jointplot(x=x_var, y=y_var, data=df, kind="reg")
+    plot = sns.jointplot(x=x_var, y=y_var, data=df, kind="reg")
     xl = x_var.title() if x_label is None else x_label
     yl = y_var.title() if y_label is None else y_label
-    h.set_axis_labels(xl, yl, fontsize=12)
-    plt.subplots_adjust(top=0.9)
+    plot.set_axis_labels(xl, yl, fontsize=12)
+    plot.fig.subplots_adjust(top=0.9)
     if title is not None:
-        plt.suptitle(title, fontsize=12)
+        plot.fig.suptitle(title)
     else:
-        plt.suptitle(f"Correlation between {x_var.title()} and {y_var.title()}", fontsize=12)
+        plot.fig.suptitle(f"Correlation between {x_var.title()} and {y_var.title()}", fontsize=12)
     save_show_plot(file_name, dir_path, to_save)
 
 
@@ -462,13 +461,105 @@ def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_pat
         If no optional parameters are provided, the function will use the default values defined internally in the
         module.
     """
-    sns.displot(df[var], kde=True, bins=20)
+    plot = sns.displot(df[var], kde=True, bins=20)
+    plot.fig.subplots_adjust(top=0.9)
     if title is not None:
-        plt.title(title)
+        plot.fig.suptitle(title)
     else:
-        plt.title(f"Distribution of the {var.title()}")
+        plot.fig.suptitle(f"Distribution of the {var.title()}")
     xl = var.title() if x_label is None else x_label
+    plot.set_axis_labels(xl, fontsize=12)
+    save_show_plot(file_name, dir_path, to_save)
+
+
+def scatter_plot(df: pd.DataFrame, x_var: str, y_var: str, hue: str = None, style: str = None, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None, to_save: bool = False):
+    """
+    Creates and optionally saves a scatterplot the 'x_var' and 'y_var' present in the DataFrame specified by the 'df' parameter.
+    This graph shows the trend of the 'x_var' correlated on 'y_var'. It is possible to distinguish the trends of the
+    'x_var' based on some categorical value, and to define a different style of the trends based on another value specified
+    by the 'style' parameter.
+
+    Parameters:
+        df (pandas.DataFrame): The DataFrame that contains data to be plotted.
+        x_var (str): The name of the column in the DataFrame to use as the variable on the X-axis.
+        y_var (str): The name of the column in the DataFrame to use as the variable on the Y-axis.
+        hue (str, optional): The name of a categorical variable. Default is None.
+        style (str, optional): The name of a variable used to distinguish the style of the points of the graph. Default is None.
+        file_name (str, optional): The name of the file with which the distribution plot will be saved. Default is None.
+        dir_path (str, optional): The path to a directory where to save the distribution plot. If this parameter isn't
+        provided the distribution plot will be saved in a subfolder of the working directory called 'plots'. Default is None.
+        title (str, optional): The title of the plot. Default is None.
+        x_label (str, optional): The label to use along with the x-axis. Default is None.
+        y_label (str, optional): The label to use along with the y-axis. Default is None.
+        to_save (bool, optional): A boolean value used to determine whether to save the plot or not. If set to False,
+        the plot will only be showed to the user. Default is False.
+
+    Returns:
+        None
+
+    Note:
+        If no optional parameters are provided, the function will use the default values defined internally in the
+        module.
+    """
+    plot = sns.relplot(data=df, x=x_var, y=y_var, hue=hue, style=style)
+    plot.fig.subplots_adjust(top=0.9)
+    if title is not None:
+        plot.fig.suptitle(title)
+    else:
+        plot.fig.suptitle(f"Scatterplot of the {x_var.title()} and {y_var.title()}")
+    xl = x_var.title() if x_label is None else x_label
+    yl = y_var.title() if y_label is None else y_label
     plt.xlabel(xl)
+    plt.ylabel(yl)
+    save_show_plot(file_name, dir_path, to_save)
+
+
+def grid_plots(df: pd.DataFrame, stats_function: Callable, x_var: str, y_var: str, col: str, row: str = None, hue: str = None, height: int = 5, aspect: float = 0.5, file_name: str = None, dir_path: str = None, title: str = None, to_save: bool = False):
+    """
+    This function create a FacetGrid which maps a dataset onto multiple axes arrayed in a grid of rows and columns
+    that correspond to levels of variables in the dataset. The plots it produces are often called “lattice”,
+    “trellis”, or “small-multiple” graphics. It can also represent levels of a third variable with the 'hue'
+    parameter, which plots different subsets of data in different colors. This uses color to resolve elements on a
+    third dimension, but only draws subsets on top of each other and will not tailor the hue parameter for the
+    specific visualization the way that axes-level functions that accept hue will.
+
+    Parameters:
+        df (pandas.DataFrame): The DataFrame that contains data to be plotted.
+        stats_function (Callable): A statistical function used to produce the plots
+        x_var (str): The name of the column in the DataFrame to use as the variable on the X-axis.
+        y_var (str): The name of the column in the DataFrame to use as the variable on the Y-axis.
+        col (str): The name of the variable that define subsets of the data, which will be drawn on separate facets in
+        along the columns of the grid.
+        row (str, optional): The name of the variable that define subsets of the data, which will be drawn on separate
+        facets in along the rows of the grid. Default is None.
+        hue (str, optional): The name of a categorical variable. Default is None.
+        height (int, optioanl): The height (in inches) of each facet. Default is 5.
+        aspect (float, optional): The aspect ratio of each facet. Default is 0.5.
+        file_name (str, optional): The name of the file with which the distribution plot will be saved. Default is None.
+        dir_path (str, optional): The path to a directory where to save the distribution plot. If this parameter isn't
+        provided the distribution plot will be saved in a subfolder of the working directory called 'plots'. Default is None.
+        title (str, optional): The title of the plot. Default is None.
+        to_save (bool, optional): A boolean value used to determine whether to save the plot or not. If set to False,
+        the plot will only be showed to the user. Default is False.
+
+    Returns:
+        None
+
+    Note:
+        If no optional parameters are provided, the function will use the default values defined internally in the
+        module.
+    """
+    if row is not None:
+        g = sns.FacetGrid(df, row=row, col=col, hue=hue, height=height, aspect=aspect)
+    else:
+        g = sns.FacetGrid(df, col=col, hue=hue, height=height, aspect=aspect)
+    g.map(stats_function, x_var, y_var, alpha=0.5)
+    g.add_legend()
+    g.fig.subplots_adjust(top=0.9)
+    if title is not None:
+        g.fig.suptitle(title)
+    else:
+        g.fig.suptitle(f"Grid of {stats_function.__name__.title()} on {x_var.title()} and {y_var.title()}")
     save_show_plot(file_name, dir_path, to_save)
 
 
