@@ -227,7 +227,7 @@ def main():
                             title="Correlation between variables\nList Ordering Job",
                             to_save=True)
             # JOINPLOT Parameter/Effective CPU Time
-            ta.set_sns_config(200, (16, 10), 1.0)
+            ta.set_sns_config(200, (15, 10), 1.0)
             ta.join_plot(df=df_list, x_var="parameter", y_var="effective_cpu_time", dir_path=args.plotspath,
                          title="Correlation between Parameter and Effective CPU Time\nList Ordering Job",
                          x_label="Parameter", y_label="Effective CPU Time (msec)",

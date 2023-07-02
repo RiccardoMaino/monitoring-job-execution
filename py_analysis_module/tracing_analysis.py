@@ -433,6 +433,7 @@ def join_plot(df: pd.DataFrame, x_var: str, y_var: str, file_name: str = None, d
     xl = x_var.title() if x_label is None else x_label
     yl = y_var.title() if y_label is None else y_label
     plot.set_axis_labels(xl, yl, fontsize=12)
+    plt.tight_layout()
     plot.fig.subplots_adjust(top=0.9)
     if title is not None:
         plot.fig.suptitle(title)
