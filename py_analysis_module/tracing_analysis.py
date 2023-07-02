@@ -387,11 +387,15 @@ def heatmap_plot(df: pd.DataFrame, file_name: str = None, dir_path: str = None, 
         If no optional parameters are provided, the function will use the default values defined internally in the
         module.
     """
+    fig, ax = plt.subplots()
     corr_matrix = df.corr(numeric_only=True).abs()
     if "sched_priority" in df.columns:
         corr_matrix.drop('sched_priority', axis=0, inplace=True)
         corr_matrix.drop('sched_priority', axis=1, inplace=True)
-    ax = sns.heatmap(data=corr_matrix, annot=True, cmap=color_palette)
+    if "job_number" in df.columns:
+        corr_matrix.drop('job_number', axis=0, inplace=True)
+        corr_matrix.drop('job_number', axis=1, inplace=True)
+    sns.heatmap(ax=ax, data=corr_matrix, annot=True, cmap=color_palette)
     if title is not None:
         plt.suptitle(title, fontsize=20)
     else:
@@ -472,7 +476,7 @@ def distribution_plot(df: pd.DataFrame, var: str, file_name: str = None, dir_pat
     save_show_plot(file_name, dir_path, to_save)
 
 
-def scatter_plot(df: pd.DataFrame, x_var: str, y_var: str, hue: str = None, style: str = None, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None, to_save: bool = False):
+def scatter_plot(df: pd.DataFrame, x_var: str, y_var: str, hue: str = None, hue_order: List[str] = None, style: str = None, file_name: str = None, dir_path: str = None, title: str = None, x_label: str = None, y_label: str = None, to_save: bool = False):
     """
     Creates and optionally saves a scatterplot the 'x_var' and 'y_var' present in the DataFrame specified by the 'df' parameter.
     This graph shows the trend of the 'x_var' correlated on 'y_var'. It is possible to distinguish the trends of the
@@ -483,8 +487,9 @@ def scatter_plot(df: pd.DataFrame, x_var: str, y_var: str, hue: str = None, styl
         df (pandas.DataFrame): The DataFrame that contains data to be plotted.
         x_var (str): The name of the column in the DataFrame to use as the variable on the X-axis.
         y_var (str): The name of the column in the DataFrame to use as the variable on the Y-axis.
-        hue (str, optional): The name of a categorical variable. Default is None.
-        style (str, optional): The name of a variable used to distinguish the style of the points of the graph. Default is None.
+        hue (str, optional): The name of a categorical variable used to distinguish trends based on that variable. Default is None.
+        hue_order (List[str], optional): The order of processing and plotting for categorical levels of the 'hue' semantic. Default is None
+        style (str, optional): The name of a variable used to distinguish the style of the points on the graph. Default is None.
         file_name (str, optional): The name of the file with which the distribution plot will be saved. Default is None.
         dir_path (str, optional): The path to a directory where to save the distribution plot. If this parameter isn't
         provided the distribution plot will be saved in a subfolder of the working directory called 'plots'. Default is None.
@@ -501,7 +506,7 @@ def scatter_plot(df: pd.DataFrame, x_var: str, y_var: str, hue: str = None, styl
         If no optional parameters are provided, the function will use the default values defined internally in the
         module.
     """
-    plot = sns.relplot(data=df, x=x_var, y=y_var, hue=hue, style=style)
+    plot = sns.relplot(data=df, x=x_var, y=y_var, hue=hue, hue_order=hue_order, style=style)
     plot.fig.subplots_adjust(top=0.9)
     if title is not None:
         plot.fig.suptitle(title)
@@ -516,7 +521,7 @@ def scatter_plot(df: pd.DataFrame, x_var: str, y_var: str, hue: str = None, styl
 
 def grid_plots(df: pd.DataFrame, stats_function: Callable, x_var: str, y_var: str, col: str, row: str = None, hue: str = None, height: int = 5, aspect: float = 0.5, file_name: str = None, dir_path: str = None, title: str = None, to_save: bool = False):
     """
-    This function create a FacetGrid which maps a dataset onto multiple axes arrayed in a grid of rows and columns
+    Creates a FacetGrid which maps a dataset onto multiple axes arrayed in a grid of rows and columns
     that correspond to levels of variables in the dataset. The plots it produces are often called “lattice”,
     “trellis”, or “small-multiple” graphics. It can also represent levels of a third variable with the 'hue'
     parameter, which plots different subsets of data in different colors. This uses color to resolve elements on a
@@ -528,12 +533,12 @@ def grid_plots(df: pd.DataFrame, stats_function: Callable, x_var: str, y_var: st
         stats_function (Callable): A statistical function used to produce the plots
         x_var (str): The name of the column in the DataFrame to use as the variable on the X-axis.
         y_var (str): The name of the column in the DataFrame to use as the variable on the Y-axis.
-        col (str): The name of the variable that define subsets of the data, which will be drawn on separate facets in
+        col (str): The name of the variable that define subsets of the data, which will be drawn on separate facets
         along the columns of the grid.
         row (str, optional): The name of the variable that define subsets of the data, which will be drawn on separate
-        facets in along the rows of the grid. Default is None.
-        hue (str, optional): The name of a categorical variable. Default is None.
-        height (int, optioanl): The height (in inches) of each facet. Default is 5.
+        facets along the rows of the grid. Default is None.
+        hue (str, optional): The name of a categorical variable used to distinguish trends based on that variable. Default is None.
+        height (int, optional): The height (in inches) of each facet. Default is 5.
         aspect (float, optional): The aspect ratio of each facet. Default is 0.5.
         file_name (str, optional): The name of the file with which the distribution plot will be saved. Default is None.
         dir_path (str, optional): The path to a directory where to save the distribution plot. If this parameter isn't
